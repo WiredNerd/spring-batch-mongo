@@ -1,4 +1,4 @@
-package wirednerd;
+package wirednerd.springbatch.mongo;
 
 import org.springframework.batch.core.configuration.annotation.BatchConfigurer;
 import org.springframework.batch.core.explore.JobExplorer;

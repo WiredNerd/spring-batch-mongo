@@ -1,13 +1,14 @@
-package wirednerd;
+package wirednerd.springbatch.mongo;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.data.mongodb.config.AbstractMongoClientConfiguration;
+import org.springframework.data.mongodb.core.convert.MappingMongoConverter;
 import org.springframework.data.mongodb.core.convert.MongoCustomConversions;
-
-import java.util.Arrays;
+import wirednerd.springbatch.mongo.converter.SpringBatchMongoConverters;
 
 @Configuration
-public class TestMongoClientConfiguration extends AbstractMongoClientConfiguration {
+public class MongoClientConfiguration extends AbstractMongoClientConfiguration {
 
     /**
      * Return the name of the database to connect to.
@@ -27,6 +28,6 @@ public class TestMongoClientConfiguration extends AbstractMongoClientConfigurati
      */
     @Override
     protected void configureConverters(MongoCustomConversions.MongoConverterConfigurationAdapter converterConfigurationAdapter) {
-        converterConfigurationAdapter.registerConverters(SpringBatchMongoConverters.converters);
+        converterConfigurationAdapter.registerConverters(SpringBatchMongoConverters.buildConverters());
     }
 }

@@ -1,6 +1,10 @@
-package org.springframework.batch.core.repository;
+package wirednerd.springbatch.mongo.repository;
 
 import org.springframework.batch.core.*;
+import org.springframework.batch.core.repository.JobExecutionAlreadyRunningException;
+import org.springframework.batch.core.repository.JobInstanceAlreadyCompleteException;
+import org.springframework.batch.core.repository.JobRepository;
+import org.springframework.batch.core.repository.JobRestartException;
 import org.springframework.batch.core.repository.dao.JobExecutionDao;
 import org.springframework.batch.core.repository.dao.JobInstanceDao;
 import org.springframework.batch.item.ExecutionContext;

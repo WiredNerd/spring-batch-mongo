@@ -1,4 +1,4 @@
-package wirednerd;
+package wirednerd.springbatch.mongo.converter;
 
 
 import org.bson.Document;
@@ -6,7 +6,6 @@ import org.junit.jupiter.api.Test;
 import org.mongounit.MongoUnitTest;
 import org.springframework.batch.core.JobParameter;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.query.Query;
@@ -14,11 +13,9 @@ import org.springframework.data.mongodb.core.query.Query;
 import java.time.OffsetDateTime;
 import java.util.Date;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 
 @SpringBootTest
-@EnableAutoConfiguration
 @MongoUnitTest
 class JobParameterConverterTest {
 
@@ -119,6 +116,82 @@ class JobParameterConverterTest {
     void convert_DocumentToJobParameter_String() {
         var doc = new Document();
         doc.put("STRING", "Text Value");
+
+        var jobParameter = jobParameterReadConverter.convert(doc);
+
+        assertEquals(JobParameter.ParameterType.STRING, jobParameter.getType());
+        assertEquals("Text Value", jobParameter.getValue());
+        assertTrue(jobParameter.isIdentifying());
+    }
+
+    @Test
+    void convert_DocumentToJobParameter_Date() {
+        var date = Date.from(OffsetDateTime.now().toInstant());
+        var doc = new Document();
+        doc.put("DATE", date);
+
+        var jobParameter = jobParameterReadConverter.convert(doc);
+
+        assertEquals(JobParameter.ParameterType.DATE, jobParameter.getType());
+        assertEquals(date, jobParameter.getValue());
+        assertTrue(jobParameter.isIdentifying());
+    }
+
+    @Test
+    void convert_DocumentToJobParameter_Long() {
+        var doc = new Document();
+        doc.put("LONG", 123L);
+
+        var jobParameter = jobParameterReadConverter.convert(doc);
+
+        assertEquals(JobParameter.ParameterType.LONG, jobParameter.getType());
+        assertEquals(123L, jobParameter.getValue());
+        assertTrue(jobParameter.isIdentifying());
+    }
+
+    @Test
+    void convert_DocumentToJobParameter_Double() {
+        var doc = new Document();
+        doc.put("DOUBLE", 1.234);
+
+        var jobParameter = jobParameterReadConverter.convert(doc);
+
+        assertEquals(JobParameter.ParameterType.DOUBLE, jobParameter.getType());
+        assertEquals(1.234, jobParameter.getValue());
+        assertTrue(jobParameter.isIdentifying());
+    }
+
+    @Test
+    void convert_DocumentToJobParameter_Identifying() {
+        var doc = new Document();
+        doc.put("STRING", "Text Value");
+        doc.put("identifying", true);
+
+        var jobParameter = jobParameterReadConverter.convert(doc);
+
+        assertEquals(JobParameter.ParameterType.STRING, jobParameter.getType());
+        assertEquals("Text Value", jobParameter.getValue());
+        assertTrue(jobParameter.isIdentifying());
+    }
+
+    @Test
+    void convert_DocumentToJobParameter_notIdentifying() {
+        var doc = new Document();
+        doc.put("STRING", "Text Value");
+        doc.put("identifying", false);
+
+        var jobParameter = jobParameterReadConverter.convert(doc);
+
+        assertEquals(JobParameter.ParameterType.STRING, jobParameter.getType());
+        assertEquals("Text Value", jobParameter.getValue());
+        assertFalse(jobParameter.isIdentifying());
+    }
+
+    @Test
+    void convert_DocumentToJobParameter_nullIdentifying() {
+        var doc = new Document();
+        doc.put("STRING", "Text Value");
+        doc.put("identifying", null);
 
         var jobParameter = jobParameterReadConverter.convert(doc);
 

@@ -1,4 +1,4 @@
-package wirednerd;
+package wirednerd.springbatch.mongo.converter;
 
 import org.bson.Document;
 import org.springframework.batch.core.JobParameter;
@@ -16,10 +16,10 @@ public class JobParameterReadConverter implements Converter<Document, JobParamet
     private static final String ILLEGAL_ARGUMENT = "Job Parameter must include STRING, DATE, LONG, or DOUBLE field";
 
     /**
-     * Convert the source object of type {@code S} to target type {@code T}.
+     * Convert the source object of type {@link Document} to target type {@link JobParameter}.
      *
-     * @param document the source object to convert, which must be an instance of {@code S} (never {@code null})
-     * @return the converted object, which must be an instance of {@code T} (potentially {@code null})
+     * @param document the source object to convert, which must be an instance of {@link Document} (never {@code null})
+     * @return the converted object, which must be an instance of {@link JobParameter} (potentially {@code null})
      * @throws IllegalArgumentException if the source cannot be converted to the desired target type
      */
     @Override

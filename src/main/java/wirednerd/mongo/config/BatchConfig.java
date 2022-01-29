@@ -12,7 +12,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.core.convert.converter.Converter;
 import org.springframework.data.mongodb.core.convert.MongoCustomConversions;
 import wirednerd.JobParameterReadConverter;
-import wirednerd.JobParameterWriteConverter;
+import wirednerd.springbatch.mongo.converter.JobParameterWriteConverter;
 
 import javax.sql.DataSource;
 import java.util.ArrayList;

@@ -1,4 +1,4 @@
-package wirednerd;
+package wirednerd.springbatch.mongo.converter;
 
 import org.bson.Document;
 import org.springframework.batch.core.JobParameter;
@@ -23,26 +23,26 @@ public class JobParameterWriteConverter implements Converter<JobParameter, Docum
      */
     @Override
     public Document convert(JobParameter source) {
-        Document dbObject = new Document();
+        Document document = new Document();
 
         switch (source.getType()) {
             case STRING:
-                dbObject.put(STRING, source.getValue());
+                document.put(STRING, source.getValue());
                 break;
             case DATE:
-                dbObject.put(DATE, source.getValue());
+                document.put(DATE, source.getValue());
                 break;
             case LONG:
-                dbObject.put(LONG, source.getValue());
+                document.put(LONG, source.getValue());
                 break;
             case DOUBLE:
-                dbObject.put(DOUBLE, source.getValue());
+                document.put(DOUBLE, source.getValue());
                 break;
         }
 
         if (!source.isIdentifying()) {
-            dbObject.put(IDENTIFYING, source.isIdentifying());
+            document.put(IDENTIFYING, source.isIdentifying());
         }
-        return dbObject;
+        return document;
     }
 }
