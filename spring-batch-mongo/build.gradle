@@ -1,0 +1,29 @@
+plugins {
+    id 'java'
+    id 'org.springframework.boot'
+    id "io.freefair.lombok"
+}
+
+apply plugin: 'java'
+apply plugin: 'io.spring.dependency-management'
+
+repositories {
+    mavenCentral()
+}
+
+group 'wirednerd'
+version '1.0.0'
+
+dependencies {
+    implementation 'org.springframework.boot:spring-boot-starter-batch'
+    implementation 'org.springframework.boot:spring-boot-starter-data-mongodb'
+
+    testImplementation 'org.junit.jupiter:junit-jupiter'
+    testImplementation 'org.springframework.boot:spring-boot-starter-test'
+    testImplementation 'org.mongounit:mongounit:2.0.1'
+    testImplementation 'com.h2database:h2'
+}
+
+test {
+    useJUnitPlatform()
+}
