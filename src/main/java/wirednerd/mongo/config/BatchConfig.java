@@ -1,6 +1,9 @@
 package wirednerd.mongo.config;
 
-import org.springframework.batch.core.*;
+import org.springframework.batch.core.Job;
+import org.springframework.batch.core.JobParameters;
+import org.springframework.batch.core.Step;
+import org.springframework.batch.core.StepExecution;
 import org.springframework.batch.core.annotation.BeforeStep;
 import org.springframework.batch.core.configuration.annotation.*;
 import org.springframework.batch.item.ItemProcessor;
@@ -9,26 +12,13 @@ import org.springframework.batch.item.ItemWriter;
 import org.springframework.batch.item.support.ListItemWriter;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.core.convert.converter.Converter;
-import org.springframework.data.mongodb.core.convert.MongoCustomConversions;
-import wirednerd.JobParameterReadConverter;
-import wirednerd.springbatch.mongo.converter.JobParameterWriteConverter;
 
 import javax.sql.DataSource;
-import java.util.ArrayList;
 import java.util.UUID;
 
 @Configuration
 @EnableBatchProcessing
 public class BatchConfig {
-
-    @Bean
-    public MongoCustomConversions customConversions() {
-        var converters = new ArrayList<Converter<?, ?>>();
-        converters.add(new JobParameterReadConverter());
-        converters.add(new JobParameterWriteConverter());
-        return new MongoCustomConversions(converters);
-    }
 
     @Bean
     BatchConfigurer batchConfigurer(DataSource dataSource) {

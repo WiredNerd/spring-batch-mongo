@@ -10,6 +10,7 @@ import org.springframework.batch.core.repository.dao.JobInstanceDao;
 import org.springframework.batch.item.ExecutionContext;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.transaction.annotation.Isolation;
+import org.springframework.batch.core.repository.support.SimpleJobRepository;
 
 import java.util.Collection;
 

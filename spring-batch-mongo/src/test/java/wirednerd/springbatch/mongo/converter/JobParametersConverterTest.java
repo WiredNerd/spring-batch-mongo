@@ -12,7 +12,8 @@ import org.springframework.data.mongodb.core.query.Query;
 
 import java.util.LinkedHashMap;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @SpringBootTest
 @MongoUnitTest
@@ -21,28 +22,25 @@ public class JobParametersConverterTest {
     @Autowired
     private MongoTemplate mongoTemplate;
 
-    private JobParametersReadConverter jobParametersReadConverter = new JobParametersReadConverter();
-    private JobParametersWriteConverter jobParametersWriteConverter = new JobParametersWriteConverter();
-
-    private JobParameterWriteConverter jobParameterWriteConverter = new JobParameterWriteConverter();
-
     @Test
-    void mongoInsertAndFind() {
+    void mongoInsertAndFind_String() {
         var paramMap = new LinkedHashMap<String, JobParameter>();
         paramMap.put("Test String Key", new JobParameter("Test Value"));
-        paramMap.put("Test Long Key", new JobParameter(123L, false));
+        paramMap.put("Test Long Key", new JobParameter(123L));
 
-        var jobParameters = new JobParameters(paramMap);
+        var expected = new JobParameters(paramMap);
 
-        mongoTemplate.insert(jobParameters);
+        mongoTemplate.insert(JobParametersConverter.convert(expected), "Test");
+        var actual = JobParametersConverter.convert(mongoTemplate.findOne(new Query(), Document.class, "Test"));
 
-        var actual = mongoTemplate.findOne(new Query(), JobParameters.class);
+        compare(expected, actual);
+    }
 
-        assertEquals(2, actual.getParameters().size());
-        assertEquals("Test Value", actual.getString("Test String Key"));
-        assertTrue(actual.getParameters().get("Test String Key").isIdentifying());
-        assertEquals(123L, actual.getLong("Test Long Key"));
-        assertFalse(actual.getParameters().get("Test Long Key").isIdentifying());
+    public static void compare(JobParameters expected, JobParameters actual) {
+        assertEquals(expected.getParameters().size(), actual.getParameters().size());
+        for (var key : expected.getParameters().keySet()) {
+            JobParameterConverterTest.compare(expected.getParameters().get(key), actual.getParameters().get(key));
+        }
     }
 
     @Test
@@ -53,7 +51,7 @@ public class JobParametersConverterTest {
 
         var jobParameters = new JobParameters(paramMap);
 
-        var doc = jobParametersWriteConverter.convert(jobParameters);
+        var doc = JobParametersConverter.convert(jobParameters);
 
         assertEquals(2, doc.keySet().size());
         assertTrue(doc.containsKey("Test String Key"));
@@ -65,10 +63,10 @@ public class JobParametersConverterTest {
     @Test
     void convert_DocumentToJobParameters() {
         var doc = new Document();
-        doc.put("Test String Key", jobParameterWriteConverter.convert(new JobParameter("Test Value")));
-        doc.put("Test Long Key", jobParameterWriteConverter.convert(new JobParameter(123L)));
+        doc.put("Test String Key", JobParameterConverter.convert(new JobParameter("Test Value")));
+        doc.put("Test Long Key", JobParameterConverter.convert(new JobParameter(123L)));
 
-        var jobParameters = jobParametersReadConverter.convert(doc);
+        var jobParameters = JobParametersConverter.convert(doc);
 
         assertEquals(2, jobParameters.getParameters().size());
         assertEquals("Test Value", jobParameters.getString("Test String Key"));

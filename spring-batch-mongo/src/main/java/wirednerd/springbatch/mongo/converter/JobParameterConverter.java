@@ -1,12 +1,13 @@
 package wirednerd.springbatch.mongo.converter;
 
+import lombok.AccessLevel;
+import lombok.NoArgsConstructor;
 import org.bson.Document;
 import org.springframework.batch.core.JobParameter;
-import org.springframework.core.convert.converter.Converter;
-import org.springframework.data.convert.ReadingConverter;
+import org.springframework.util.Assert;
 
-@ReadingConverter
-public class JobParameterReadConverter implements Converter<Document, JobParameter> {
+@NoArgsConstructor(access = AccessLevel.PRIVATE)
+public class JobParameterConverter {
 
     private static final String IDENTIFYING = "identifying";
     private static final String STRING = "STRING";
@@ -22,8 +23,7 @@ public class JobParameterReadConverter implements Converter<Document, JobParamet
      * @return the converted object, which must be an instance of {@link JobParameter} (potentially {@code null})
      * @throws IllegalArgumentException if the source cannot be converted to the desired target type
      */
-    @Override
-    public JobParameter convert(Document document) {
+    public static JobParameter convert(Document document) {
         boolean identifying = document.getBoolean(IDENTIFYING, true);
 
         if (document.containsKey(STRING)) {
@@ -38,7 +38,38 @@ public class JobParameterReadConverter implements Converter<Document, JobParamet
         if (document.containsKey(DOUBLE)) {
             return new JobParameter(document.getDouble(DOUBLE), identifying);
         }
-
+        
         throw new IllegalArgumentException(ILLEGAL_ARGUMENT);
+    }
+
+    /**
+     * Convert the source object of type {@link JobParameter} to target type {@link Document}.
+     *
+     * @param source the source object to convert, which must be an instance of {@link JobParameter} (never {@code null})
+     * @return the converted object, which must be an instance of {@link Document} (potentially {@code null})
+     * @throws IllegalArgumentException if the source cannot be converted to the desired target type
+     */
+    public static Document convert(JobParameter source) {
+        Document document = new Document();
+
+        switch (source.getType()) {
+            case STRING:
+                document.put(STRING, source.getValue());
+                break;
+            case DATE:
+                document.put(DATE, source.getValue());
+                break;
+            case LONG:
+                document.put(LONG, source.getValue());
+                break;
+            case DOUBLE:
+                document.put(DOUBLE, source.getValue());
+                break;
+        }
+
+        if (!source.isIdentifying()) {
+            document.put(IDENTIFYING, source.isIdentifying());
+        }
+        return document;
     }
 }

@@ -22,34 +22,57 @@ class JobParameterConverterTest {
     @Autowired
     private MongoTemplate mongoTemplate;
 
-    private JobParameterWriteConverter jobParameterWriteConverter = new JobParameterWriteConverter();
-    private JobParameterReadConverter jobParameterReadConverter = new JobParameterReadConverter();
-
     @Test
     void mongoInsertAndFind_String() {
-        mongoInsertAndFind(new JobParameter("Test Value"));
+        var expected = new JobParameter("Test Value");
+
+        mongoTemplate.insert(JobParameterConverter.convert(expected), "Test");
+        var actual = JobParameterConverter.convert(mongoTemplate.findOne(new Query(), Document.class, "Test"));
+
+        compare(expected, actual);
+    }
+
+    @Test
+    void mongoInsertAndFind_NotIdentifying() {
+        var expected = new JobParameter("Test Value", false);
+
+        mongoTemplate.insert(JobParameterConverter.convert(expected), "Test");
+        var actual = JobParameterConverter.convert(mongoTemplate.findOne(new Query(), Document.class, "Test"));
+
+        compare(expected, actual);
     }
 
     @Test
     void mongoInsertAndFind_Date() {
-        mongoInsertAndFind(new JobParameter(Date.from(OffsetDateTime.now().toInstant()), false));
+        var expected = new JobParameter(Date.from(OffsetDateTime.now().toInstant()));
+
+        mongoTemplate.insert(JobParameterConverter.convert(expected), "Test");
+        var actual = JobParameterConverter.convert(mongoTemplate.findOne(new Query(), Document.class, "Test"));
+
+        compare(expected, actual);
     }
 
     @Test
     void mongoInsertAndFind_Long() {
-        mongoInsertAndFind(new JobParameter(123L, true));
+        var expected = new JobParameter(456L);
+
+        mongoTemplate.insert(JobParameterConverter.convert(expected), "Test");
+        var actual = JobParameterConverter.convert(mongoTemplate.findOne(new Query(), Document.class, "Test"));
+
+        compare(expected, actual);
     }
 
     @Test
     void mongoInsertAndFind_Double() {
-        mongoInsertAndFind(new JobParameter(1.2, false));
+        var expected = new JobParameter(12.3);
+
+        mongoTemplate.insert(JobParameterConverter.convert(expected), "Test");
+        var actual = JobParameterConverter.convert(mongoTemplate.findOne(new Query(), Document.class, "Test"));
+
+        compare(expected, actual);
     }
 
-    private void mongoInsertAndFind(JobParameter expected) {
-        mongoTemplate.insert(expected);
-
-        var actual = mongoTemplate.findOne(new Query(), JobParameter.class);
-
+    public static void compare(JobParameter expected, JobParameter actual) {
         assertEquals(expected.getType(), actual.getType());
         assertEquals(expected.getValue(), actual.getValue());
         assertEquals(expected.isIdentifying(), actual.isIdentifying());
@@ -59,7 +82,7 @@ class JobParameterConverterTest {
     void convert_JobParameterToDocument_String() {
         var jobParameter = new JobParameter("Test Value");
 
-        var doc = jobParameterWriteConverter.convert(jobParameter);
+        var doc = JobParameterConverter.convert(jobParameter);
 
         assertEquals(1, doc.keySet().size());
         assertTrue(doc.containsKey("STRING"), doc.keySet().toString());
@@ -70,7 +93,7 @@ class JobParameterConverterTest {
     void convert_JobParameterToDocument_NotIdentifying() {
         var jobParameter = new JobParameter("Test Value", false);
 
-        var doc = jobParameterWriteConverter.convert(jobParameter);
+        var doc = JobParameterConverter.convert(jobParameter);
 
         assertEquals(2, doc.keySet().size(), doc.keySet().toString());
         assertTrue(doc.containsKey("identifying"), doc.keySet().toString());
@@ -83,7 +106,7 @@ class JobParameterConverterTest {
     void convert_JobParameterToDocument_Date() {
         var jobParameter = new JobParameter(Date.from(OffsetDateTime.now().toInstant()));
 
-        var doc = jobParameterWriteConverter.convert(jobParameter);
+        var doc = JobParameterConverter.convert(jobParameter);
 
         assertEquals(1, doc.keySet().size());
         assertTrue(doc.containsKey("DATE"), doc.keySet().toString());
@@ -94,7 +117,7 @@ class JobParameterConverterTest {
     void convert_JobParameterToDocument_Long() {
         var jobParameter = new JobParameter(123L);
 
-        var doc = jobParameterWriteConverter.convert(jobParameter);
+        var doc = JobParameterConverter.convert(jobParameter);
 
         assertEquals(1, doc.keySet().size());
         assertTrue(doc.containsKey("LONG"), doc.keySet().toString());
@@ -105,7 +128,7 @@ class JobParameterConverterTest {
     void convert_JobParameterToDocument_Double() {
         var jobParameter = new JobParameter(1.23);
 
-        var doc = jobParameterWriteConverter.convert(jobParameter);
+        var doc = JobParameterConverter.convert(jobParameter);
 
         assertEquals(1, doc.keySet().size());
         assertTrue(doc.containsKey("DOUBLE"), doc.keySet().toString());
@@ -117,7 +140,7 @@ class JobParameterConverterTest {
         var doc = new Document();
         doc.put("STRING", "Text Value");
 
-        var jobParameter = jobParameterReadConverter.convert(doc);
+        var jobParameter = JobParameterConverter.convert(doc);
 
         assertEquals(JobParameter.ParameterType.STRING, jobParameter.getType());
         assertEquals("Text Value", jobParameter.getValue());
@@ -130,7 +153,7 @@ class JobParameterConverterTest {
         var doc = new Document();
         doc.put("DATE", date);
 
-        var jobParameter = jobParameterReadConverter.convert(doc);
+        var jobParameter = JobParameterConverter.convert(doc);
 
         assertEquals(JobParameter.ParameterType.DATE, jobParameter.getType());
         assertEquals(date, jobParameter.getValue());
@@ -142,7 +165,7 @@ class JobParameterConverterTest {
         var doc = new Document();
         doc.put("LONG", 123L);
 
-        var jobParameter = jobParameterReadConverter.convert(doc);
+        var jobParameter = JobParameterConverter.convert(doc);
 
         assertEquals(JobParameter.ParameterType.LONG, jobParameter.getType());
         assertEquals(123L, jobParameter.getValue());
@@ -154,7 +177,7 @@ class JobParameterConverterTest {
         var doc = new Document();
         doc.put("DOUBLE", 1.234);
 
-        var jobParameter = jobParameterReadConverter.convert(doc);
+        var jobParameter = JobParameterConverter.convert(doc);
 
         assertEquals(JobParameter.ParameterType.DOUBLE, jobParameter.getType());
         assertEquals(1.234, jobParameter.getValue());
@@ -167,7 +190,7 @@ class JobParameterConverterTest {
         doc.put("STRING", "Text Value");
         doc.put("identifying", true);
 
-        var jobParameter = jobParameterReadConverter.convert(doc);
+        var jobParameter = JobParameterConverter.convert(doc);
 
         assertEquals(JobParameter.ParameterType.STRING, jobParameter.getType());
         assertEquals("Text Value", jobParameter.getValue());
@@ -180,7 +203,7 @@ class JobParameterConverterTest {
         doc.put("STRING", "Text Value");
         doc.put("identifying", false);
 
-        var jobParameter = jobParameterReadConverter.convert(doc);
+        var jobParameter = JobParameterConverter.convert(doc);
 
         assertEquals(JobParameter.ParameterType.STRING, jobParameter.getType());
         assertEquals("Text Value", jobParameter.getValue());
@@ -193,7 +216,7 @@ class JobParameterConverterTest {
         doc.put("STRING", "Text Value");
         doc.put("identifying", null);
 
-        var jobParameter = jobParameterReadConverter.convert(doc);
+        var jobParameter = JobParameterConverter.convert(doc);
 
         assertEquals(JobParameter.ParameterType.STRING, jobParameter.getType());
         assertEquals("Text Value", jobParameter.getValue());
