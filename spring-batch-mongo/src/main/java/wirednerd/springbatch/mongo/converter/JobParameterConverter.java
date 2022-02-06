@@ -4,17 +4,16 @@ import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
 import org.bson.Document;
 import org.springframework.batch.core.JobParameter;
-import org.springframework.util.Assert;
 
+import static wirednerd.springbatch.mongo.MongodbRepositoryConstants.*;
+
+/**
+ * Utility Class for converting objects of type {@link JobParameter} to and from {@link Document}
+ *
+ * @author Peter Busch
+ */
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
 public class JobParameterConverter {
-
-    private static final String IDENTIFYING = "identifying";
-    private static final String STRING = "STRING";
-    private static final String DATE = "DATE";
-    private static final String LONG = "LONG";
-    private static final String DOUBLE = "DOUBLE";
-    private static final String ILLEGAL_ARGUMENT = "Job Parameter must include STRING, DATE, LONG, or DOUBLE field";
 
     /**
      * Convert the source object of type {@link Document} to target type {@link JobParameter}.
@@ -23,7 +22,7 @@ public class JobParameterConverter {
      * @return the converted object, which must be an instance of {@link JobParameter} (potentially {@code null})
      * @throws IllegalArgumentException if the source cannot be converted to the desired target type
      */
-    public static JobParameter convert(Document document) {
+    public static JobParameter convert(final Document document) {
         boolean identifying = document.getBoolean(IDENTIFYING, true);
 
         if (document.containsKey(STRING)) {
@@ -38,8 +37,8 @@ public class JobParameterConverter {
         if (document.containsKey(DOUBLE)) {
             return new JobParameter(document.getDouble(DOUBLE), identifying);
         }
-        
-        throw new IllegalArgumentException(ILLEGAL_ARGUMENT);
+
+        throw new IllegalArgumentException("Job Parameter must include STRING, DATE, LONG, or DOUBLE field");
     }
 
     /**
@@ -49,7 +48,7 @@ public class JobParameterConverter {
      * @return the converted object, which must be an instance of {@link Document} (potentially {@code null})
      * @throws IllegalArgumentException if the source cannot be converted to the desired target type
      */
-    public static Document convert(JobParameter source) {
+    public static Document convert(final JobParameter source) {
         Document document = new Document();
 
         switch (source.getType()) {

@@ -54,37 +54,4 @@ public class ApplicationController {
 
         return listItemWriter.getWrittenItems();
     }
-
-    @Autowired
-    MongoTemplate mongoTemplate;
-
-    @PostMapping("/jobParameter")
-    public void postJobParameter(@RequestBody MongoJobParameter mongoJobParameter) {
-        var doc = new TestDocument2();
-        doc.setJobParameter(mongoJobParameter.toJobParameter());
-        mongoTemplate.insert(doc);
-    }
-
-    @GetMapping("/jobParameter")
-    public TestDocument2 getJobParameter() {
-        return mongoTemplate.findOne(new Query(), TestDocument2.class);
-    }
-
-    @GetMapping("/jobParameter/example")
-    public MongoJobParameter getExampleJobParameter() {
-        var out = new MongoJobParameter();
-        out.setIdentifying(true);
-        out.setValueDate(Date.from(OffsetDateTime.now().toInstant()));
-        out.setValueLong(123L);
-        out.setValueDouble(1.2);
-        out.setValueString("Test");
-        return out;
-    }
-
-    @Data
-    @Document("Test")
-    class TestDocument2 {
-        JobParameter jobParameter;
-    }
-
 }

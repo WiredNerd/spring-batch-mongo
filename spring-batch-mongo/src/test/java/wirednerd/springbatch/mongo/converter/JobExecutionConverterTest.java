@@ -1,5 +1,6 @@
 package wirednerd.springbatch.mongo.converter;
 
+import org.assertj.core.util.Lists;
 import org.bson.Document;
 import org.junit.jupiter.api.Test;
 import org.mongounit.MongoUnitTest;
@@ -18,12 +19,12 @@ import static org.junit.jupiter.api.Assertions.*;
 
 @SpringBootTest
 @MongoUnitTest
-class JobExecutionConvertersTest {
+public class JobExecutionConverterTest {
 
     @Autowired
     private MongoTemplate mongoTemplate;
 
-    private JobKeyGenerator<JobParameters> jobKeyGenerator = new DefaultJobKeyGenerator();
+    private final JobKeyGenerator<JobParameters> jobKeyGenerator = new DefaultJobKeyGenerator();
 
     @Test
     void mongoInsertAndFind() {
@@ -49,12 +50,28 @@ class JobExecutionConvertersTest {
     }
 
     @Test
+    void mongoInsertAndFind_jobInstance() {
+        var expected = buildJobExecution();
+
+        mongoTemplate.insert(JobExecutionConverter.convert(expected.getJobInstance(), expected.getJobParameters()), "Test");
+
+        var document = mongoTemplate.findOne(new Query(), Document.class, "Test");
+        assertEquals(jobKeyGenerator.generateKey(expected.getJobParameters()), document.getString("jobKey"));
+
+        var actual = JobExecutionConverter.convert(document);
+
+        assertEquals(expected.getJobInstance().getInstanceId(), actual.getJobInstance().getInstanceId());
+        assertEquals(expected.getJobInstance().getJobName(), actual.getJobInstance().getJobName());
+    }
+
+    @Test
     void converters() {
         var expected = buildJobExecution();
 
         var document = JobExecutionConverter.convert(expected);
 
         assertTrue(document.containsKey("jobExecutionId"), document.toJson());
+        assertTrue(document.containsKey("version"), document.toJson());
         assertTrue(document.containsKey("jobParameters"), document.toJson());
         assertTrue(document.containsKey("jobInstanceId"), document.toJson());
         assertTrue(document.containsKey("jobName"), document.toJson());
@@ -62,6 +79,7 @@ class JobExecutionConvertersTest {
         assertTrue(document.containsKey("jobKey"), document.toJson());
         assertEquals(jobKeyGenerator.generateKey(expected.getJobParameters()), document.getString("jobKey"));
 
+        assertTrue(document.containsKey("stepExecutions"), document.toJson());
         assertTrue(document.containsKey("status"), document.toJson());
         assertTrue(document.containsKey("startTime"), document.toJson());
         assertTrue(document.containsKey("createTime"), document.toJson());
@@ -155,6 +173,9 @@ class JobExecutionConvertersTest {
         assertTrue(document.containsKey("jobExecutionId"));
         assertEquals(2L, document.get("jobExecutionId"));
 
+        assertTrue(document.containsKey("version"));
+        assertNull(document.get("version"));
+
         assertTrue(document.containsKey("jobParameters"));
         assertEquals(0, document.get("jobParameters", Document.class).size());
 
@@ -166,6 +187,9 @@ class JobExecutionConvertersTest {
 
         assertTrue(document.containsKey("jobKey"));
         assertEquals(jobKeyGenerator.generateKey(new JobParameters()), document.get("jobKey"));
+
+        assertTrue(document.containsKey("stepExecutions"));
+        assertNotNull(document.get("stepExecutions"));
 
         assertTrue(document.containsKey("status"));
         assertNotNull(document.get("status"));
@@ -193,18 +217,15 @@ class JobExecutionConvertersTest {
 
     @Test
     void converters_DocumentToJobExecution_emptyDocument() {
-        var expected = new JobExecution(null, null, null, null);
-        expected.setCreateTime(null);
-        expected.setStatus(null);
-        expected.setExitStatus(null);
-        expected.setExecutionContext(null);
-
-        var actual = JobExecutionConverter.convert(new Document());
-
-        compare(expected, actual);
+        try {
+            JobExecutionConverter.convert(new Document());
+            fail("IllegalArgumentException expected");
+        } catch (IllegalArgumentException e) {
+            assertEquals("A jobName is required", e.getMessage());
+        }
     }
 
-    private JobExecution buildJobExecution() {
+    public static JobExecution buildJobExecution() {
         var paramMap = new LinkedHashMap<String, JobParameter>();
         paramMap.put("Test String Key", new JobParameter("Test Value"));
         paramMap.put("Test Long Key", new JobParameter(123L, false));
@@ -215,8 +236,10 @@ class JobExecutionConvertersTest {
 
         var jobExecution = new JobExecution(jobInstance, 2L, jobParameters, "Job Configuration String");
 
-        //TODO stepExecutions
+        var step1 = StepExecutionConverterTest.buildStepExecution(jobExecution);
+        jobExecution.addStepExecutions(Lists.newArrayList(step1));
 
+        jobExecution.setVersion(5);
         jobExecution.setStatus(BatchStatus.STARTED);
         jobExecution.setStartTime(Date.from(OffsetDateTime.now().minusHours(3).toInstant()));
         jobExecution.setCreateTime(Date.from(OffsetDateTime.now().minusHours(2).toInstant()));
@@ -235,6 +258,7 @@ class JobExecutionConvertersTest {
 
     private void compare(JobExecution expected, JobExecution actual) {
         assertEquals(expected.getId(), actual.getId());
+        assertEquals(expected.getVersion(), actual.getVersion());
         JobParametersConverterTest.compare(expected.getJobParameters(), actual.getJobParameters());
 
         if (expected.getJobInstance() == null) {
@@ -244,7 +268,16 @@ class JobExecutionConvertersTest {
             assertEquals(expected.getJobInstance().getJobName(), actual.getJobInstance().getJobName());
         }
 
-        //TODO StepExecutions
+        if (CollectionUtils.isEmpty(expected.getStepExecutions())) {
+            assertTrue(CollectionUtils.isEmpty(actual.getStepExecutions()));
+        } else {
+            var expectedSteps = expected.getStepExecutions().toArray();
+            var actualSteps = actual.getStepExecutions().toArray();
+            for (int i = 0; i < expected.getStepExecutions().size(); i++) {
+                StepExecutionConverterTest.compare((StepExecution) expectedSteps[i], (StepExecution) actualSteps[i]);
+            }
+        }
+
         assertEquals(expected.getStatus(), actual.getStatus());
         assertEquals(expected.getStartTime(), actual.getStartTime());
         assertEquals(expected.getCreateTime(), actual.getCreateTime());
@@ -259,8 +292,7 @@ class JobExecutionConvertersTest {
             assertEquals(expected.getExitStatus().getExitDescription(), actual.getExitStatus().getExitDescription());
         }
 
-        // TODO: executionContext
-//        assertEquals(expected.getExecutionContext(), actual.getExecutionContext());
+        ExecutionContextConverterTest.compare(expected.getExecutionContext(), actual.getExecutionContext());
         assertTrue(CollectionUtils.isEmpty(actual.getFailureExceptions()));
         assertEquals(expected.getJobConfigurationName(), actual.getJobConfigurationName());
     }

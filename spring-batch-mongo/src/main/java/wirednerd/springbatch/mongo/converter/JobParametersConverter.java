@@ -9,6 +9,11 @@ import org.springframework.util.CollectionUtils;
 
 import java.util.LinkedHashMap;
 
+/**
+ * Utility Class for converting objects of type {@link JobParameters} to and from {@link Document}
+ *
+ * @author Peter Busch
+ */
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
 public class JobParametersConverter {
 
@@ -19,7 +24,7 @@ public class JobParametersConverter {
      * @return the converted object, which must be an instance of {@link JobParameters} (potentially {@code null})
      * @throws IllegalArgumentException if the source cannot be converted to the desired target type
      */
-    public static JobParameters convert(Document source) {
+    public static JobParameters convert(final Document source) {
         var paramMap = new LinkedHashMap<String, JobParameter>();
         if (!CollectionUtils.isEmpty(source)) {
             source.forEach((key, value) -> {
@@ -39,7 +44,7 @@ public class JobParametersConverter {
      * @return the converted object, which must be an instance of {@link Document} (potentially {@code null})
      * @throws IllegalArgumentException if the source cannot be converted to the desired target type
      */
-    public static Document convert(JobParameters source) {
+    public static Document convert(final JobParameters source) {
         Document document = new Document();
         source.getParameters().forEach((key, value) -> document.put(key, JobParameterConverter.convert(value)));
         return document;
