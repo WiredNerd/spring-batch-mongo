@@ -7,16 +7,18 @@ import org.springframework.batch.core.launch.JobLauncher;
 import org.springframework.batch.core.launch.support.SimpleJobLauncher;
 import org.springframework.batch.core.repository.JobRepository;
 import org.springframework.core.task.TaskExecutor;
+import org.springframework.data.domain.Sort;
 import org.springframework.data.mongodb.MongoTransactionManager;
 import org.springframework.data.mongodb.core.MongoTemplate;
+import org.springframework.data.mongodb.core.index.Index;
 import org.springframework.lang.Nullable;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.annotation.EnableTransactionManagement;
 import org.springframework.util.Assert;
+import wirednerd.springbatch.mongo.explore.MongodbJobExplorer;
 import wirednerd.springbatch.mongo.repository.MongodbJobRepository;
 
-import static wirednerd.springbatch.mongo.MongodbRepositoryConstants.DEFAULT_COUNTER_COLLECTION;
-import static wirednerd.springbatch.mongo.MongodbRepositoryConstants.DEFAULT_JOB_COLLECTION;
+import static wirednerd.springbatch.mongo.MongodbRepositoryConstants.*;
 
 /**
  * <p>Primary class for enabling Mongodb for storing Spring Batch job execution data.</p>
@@ -42,6 +44,14 @@ import static wirednerd.springbatch.mongo.MongodbRepositoryConstants.DEFAULT_JOB
  *     }
  * }
  * </pre>
+ *
+ * <p>In the jobCollection, creates 4 Indexes:</p>
+ * <ul>
+ * <li>Unique Index on jobName, jobKey, and jobExecutionId named "jobInstance_jobExecution_unique"</li>
+ * <li>Unique Index on jobExecutionId named "jobExecutionId_unique"</li>
+ * <li>Index on jobInstanceId named "jobInstanceId"</li>
+ * <li>Index on jobName, jobInstanceId named "jobName_jobInstanceId"</li>
+ * </ul>
  *
  * @author Peter Busch
  */
@@ -83,7 +93,32 @@ public class MongodbBatchConfigurer implements BatchConfigurer {
             throw new RuntimeException(e.getMessage(), e); //NOPMD
         }
 
-        jobExplorer = null;//TODO
+        jobExplorer = new MongodbJobExplorer(mongoTemplate, jobCollectionName);
+
+        mongoTemplate.indexOps(jobCollectionName)
+                .ensureIndex(new Index()
+                        .on(JOB_NAME, Sort.Direction.ASC)
+                        .on(JOB_KEY, Sort.Direction.ASC)
+                        .on(JOB_EXECUTION_ID, Sort.Direction.DESC)
+                        .named("jobInstance_jobExecution_unique")
+                        .unique());
+
+        mongoTemplate.indexOps(jobCollectionName)
+                .ensureIndex(new Index()
+                        .on(JOB_EXECUTION_ID, Sort.Direction.DESC)
+                        .named("jobExecutionId_unique")
+                        .unique());
+
+        mongoTemplate.indexOps(jobCollectionName)
+                .ensureIndex(new Index()
+                        .on(JOB_INSTANCE_ID, Sort.Direction.DESC)
+                        .named("jobInstanceId"));
+
+        mongoTemplate.indexOps(jobCollectionName)
+                .ensureIndex(new Index()
+                        .on(JOB_NAME, Sort.Direction.ASC)
+                        .on(JOB_INSTANCE_ID, Sort.Direction.DESC)
+                        .named("jobName_jobInstanceId"));
     }
 
     @Override

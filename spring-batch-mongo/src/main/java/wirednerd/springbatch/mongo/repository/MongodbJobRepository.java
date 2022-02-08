@@ -13,7 +13,6 @@ import org.springframework.batch.item.ExecutionContext;
 import org.springframework.dao.OptimisticLockingFailureException;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.mongodb.core.MongoTemplate;
-import org.springframework.data.mongodb.core.index.Index;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.data.mongodb.core.query.Update;
@@ -22,6 +21,7 @@ import org.springframework.util.Assert;
 import org.springframework.util.CollectionUtils;
 import wirednerd.springbatch.mongo.converter.ExecutionContextConverter;
 import wirednerd.springbatch.mongo.converter.JobExecutionConverter;
+import wirednerd.springbatch.mongo.converter.JobInstanceConverter;
 import wirednerd.springbatch.mongo.converter.StepExecutionConverter;
 
 import java.util.Collection;
@@ -35,21 +35,73 @@ import static wirednerd.springbatch.mongo.MongodbRepositoryConstants.*;
 /**
  * <p>Implementation of a {@link JobRepository} that uses MongoDB instead of a jdbc database.</p>
  * <p>It uses one one collection for storing all job execution data, and another for storing counters.  See: {@link MongodbCounter}</p>
- * <p>In the jobCollection, creates 2 Indexes:</p>
- * <ul>
- * <li>Unique Index on jobName, jobKey, and jobExecutionId named "jobInstance_jobExecution_unique"</li>
- * <li>Unique Index on jobExecutionId named "jobExecutionId_unique"</li>
- * </ul>
  * <p>In the counterCollection, creates Counter objects for jobInstanceId, jobExecutionId, and stepExecutionId</p>
  * <p>Schema for job execution data</p>
  * <pre>
- *     TBD
+ * {
+ *   "jobInstanceId": "&lt;long&gt;",
+ *   "jobKey": "&lt;string&gt;",
+ *   "jobParameters": {
+ *     "&lt;stringParameterKey&gt;": {
+ *       "STRING": "&lt;string&gt;",
+ *       "identifying": "&lt;boolean, default true&gt;"
+ *     },
+ *     "&lt;dateParameterKey&gt;": {
+ *       "DATE": "&lt;date&gt;",
+ *       "identifying": "&lt;boolean, default true&gt;"
+ *     },
+ *     "&lt;longParameterKey&gt;": {
+ *       "LONG": "&lt;long&gt;",
+ *       "identifying": "&lt;boolean, default true&gt;"
+ *     },
+ *     "&lt;doubleParameterKey&gt;": {
+ *       "DOUBLE": "&lt;double&gt;",
+ *       "identifying": "&lt;boolean, default true&gt;"
+ *     }
+ *   },
+ *   "jobExecutionId": "&lt;long&gt;",
+ *   "version": "&lt;integer&gt;",
+ *   "status": "&lt;string&gt;",
+ *   "startTime": "&lt;date&gt;",
+ *   "createTime": "&lt;date&gt;",
+ *   "endTime": "&lt;date&gt;",
+ *   "lastUpdated": "&lt;date&gt;",
+ *   "exitCode": "&lt;string&gt;",
+ *   "exitDescription": "&lt;string&gt;",
+ *   "jobConfigurationName": "&lt;string&gt;",
+ *   "executionContext": {
+ *     "&lt;key&gt;": "&lt;value&gt;"
+ *   },
+ *   "stepExecutions": [
+ *     {
+ *       "stepExecutionId": "&lt;long&gt;",
+ *       "stepName": "&lt;string&gt;",
+ *       "status": "&lt;string&gt;",
+ *       "readCount": "&lt;integer&gt;",
+ *       "writeCount": "&lt;integer&gt;",
+ *       "commitCount": "&lt;integer&gt;",
+ *       "rollbackCount": "&lt;integer&gt;",
+ *       "readSkipCount": "&lt;integer&gt;",
+ *       "processSkipCount": "&lt;integer&gt;",
+ *       "writeSkipCount": "&lt;integer&gt;",
+ *       "startTime": "&lt;date&gt;",
+ *       "endTime": "&lt;date&gt;",
+ *       "lastUpdated": "&lt;date&gt;",
+ *       "exitCode": "&lt;string&gt;",
+ *       "exitDescription": "&lt;string&gt;",
+ *       "filterCount": "&lt;integer&gt;",
+ *       "executionContext": {
+ *         "&lt;key&gt;": "&lt;value&gt;"
+ *       }
+ *     }
+ *   ]
+ * }
  * </pre>
  *
  * @author Peter Busch
  */
 @Slf4j
-@SuppressWarnings("PMD.TooManyMethods")
+@SuppressWarnings({"PMD.TooManyMethods", "PMD.CommentSize"})
 public class MongodbJobRepository implements JobRepository {
 
     /**
@@ -119,20 +171,6 @@ public class MongodbJobRepository implements JobRepository {
         jobInstanceCounter = new MongodbCounter(mongoTemplate, JOB_INSTANCE_ID, counterCollectionName);
         jobExecutionCounter = new MongodbCounter(mongoTemplate, JOB_EXECUTION_ID, counterCollectionName);
         stepExecutionCounter = new MongodbCounter(mongoTemplate, STEP_EXECUTION_ID, counterCollectionName);
-
-        mongoTemplate.indexOps(jobCollectionName)
-                .ensureIndex(new Index()
-                        .on(JOB_NAME, Sort.Direction.ASC)
-                        .on(JOB_KEY, Sort.Direction.ASC)
-                        .on(JOB_EXECUTION_ID, Sort.Direction.ASC)
-                        .named("jobInstance_jobExecution_unique")
-                        .unique());
-
-        mongoTemplate.indexOps(jobCollectionName)
-                .ensureIndex(new Index()
-                        .on(JOB_EXECUTION_ID, Sort.Direction.ASC)
-                        .named("jobExecutionId_unique")
-                        .unique());
     }
 
     /**
@@ -168,12 +206,11 @@ public class MongodbJobRepository implements JobRepository {
     @Override
     public JobInstance createJobInstance(String jobName, JobParameters jobParameters) {
 
-        validateJobInstance(jobName, jobParameters);
         Assert.state(!isJobInstanceExists(jobName, jobParameters), "JobInstance must not already exist.");
 
         var jobInstance = new JobInstance(jobInstanceCounter.nextValue(), jobName);
 
-        mongoTemplate.insert(JobExecutionConverter.convert(jobInstance, jobParameters), jobCollectionName);
+        mongoTemplate.insert(JobInstanceConverter.convert(jobInstance, jobParameters), jobCollectionName);
 
         return jobInstance;
     }
@@ -617,7 +654,7 @@ public class MongodbJobRepository implements JobRepository {
             }
         }
 
-        return null;
+        return null;  // Not reachable
     }
 
     /**

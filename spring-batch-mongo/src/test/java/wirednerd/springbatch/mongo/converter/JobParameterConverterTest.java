@@ -185,6 +185,19 @@ class JobParameterConverterTest {
     }
 
     @Test
+    void convert_DocumentToJobParameter_Error() {
+        var doc = new Document();
+        doc.put("KEY", 1.234);
+
+        try {
+            var jobParameter = JobParameterConverter.convert(doc);
+            fail("IllegalArgumentException expected");
+        } catch (IllegalArgumentException e) {
+            assertEquals("Job Parameter must include STRING, DATE, LONG, or DOUBLE field", e.getMessage());
+        }
+    }
+
+    @Test
     void convert_DocumentToJobParameter_Identifying() {
         var doc = new Document();
         doc.put("STRING", "Text Value");

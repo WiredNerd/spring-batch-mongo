@@ -11,6 +11,8 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
 public class MongodbRepositoryConstants {
 
+    public static final String ID = "_id"; //NOPMD
+
     // Collections
     public static final String DEFAULT_JOB_COLLECTION = "jobExecutions";
     public static final String DEFAULT_COUNTER_COLLECTION = "counters";
@@ -25,6 +27,7 @@ public class MongodbRepositoryConstants {
     public static final String STEP_EXECUTIONS = "stepExecutions";
     public static final String CREATE_TIME = "createTime";
     public static final String JOB_CONFIGURATION_NAME = "jobConfigurationName";
+    public static final String VERSION = "version";
 
     // StepExecution
     public static final String STEP_EXECUTION_ID = "stepExecutionId";
@@ -39,7 +42,6 @@ public class MongodbRepositoryConstants {
     public static final String FILTER_COUNT = "filterCount";
 
     // JobExecution & StepExecution
-    public static final String VERSION = "version";
     public static final String STATUS = "status";
     public static final String START_TIME = "startTime";
     public static final String END_TIME = "endTime";

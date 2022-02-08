@@ -63,30 +63,6 @@ public class JobExecutionConverter {
     }
 
     /**
-     * Convert the source object of type {@link JobInstance} to target type {@link Document}.
-     * Result should be readable as a JobExecution with only jobInstanceId, jobName, and jobKey.
-     *
-     * @param source        the source object to convert, which must be an instance of {@link JobInstance} (never {@code null})
-     * @param jobParameters are used for generating the jobKey, which is part of the stored Job Instance data.
-     * @return the converted object, which must be an instance of {@link Document} (potentially {@code null})
-     * @throws IllegalArgumentException if the source cannot be converted to the desired target type
-     */
-    public static Document convert(final JobInstance source, final JobParameters jobParameters) {
-        Document document = new Document();
-
-        Assert.notNull(source, "jobInstance must not be null");
-        Assert.notNull(source.getId(), "jobInstanceId must not be null");
-        Assert.notNull(source.getJobName(), "status must not be null");
-        Assert.notNull(jobParameters, "jobParameters must not be null");
-
-        document.put(JOB_INSTANCE_ID, source.getId());
-        document.put(JOB_NAME, source.getJobName());
-        document.put(JOB_KEY, jobKeyGenerator.generateKey(jobParameters));
-
-        return document;
-    }
-
-    /**
      * Convert the source object of type {@link Document} to target type {@link JobExecution}.
      *
      * @param source the source object to convert, which must be an instance of {@link Document} (never {@code null})
@@ -102,9 +78,8 @@ public class JobExecutionConverter {
 
         var jobExecution = new JobExecution(job, jobExecutionId, jobParameters, jobConfigurationName);
 
-        var steps = source.getList(STEP_EXECUTIONS, Document.class, new ArrayList<>()).stream()
-                .map(doc -> StepExecutionConverter.convert(doc, jobExecution)).collect(Collectors.toList());
-        jobExecution.addStepExecutions(steps);
+        source.getList(STEP_EXECUTIONS, Document.class, new ArrayList<>())
+                .forEach(doc -> StepExecutionConverter.convert(doc, jobExecution));
 
         var status = source.getString(STATUS);
         jobExecution.setStatus(status == null ? BatchStatus.UNKNOWN : BatchStatus.valueOf(status));

@@ -104,39 +104,6 @@ class MongodbJobRepositoryTest {
     }
 
     @Test
-    void constructor_ensureIndexes() {
-        var jobIndexes = mongoTemplate.indexOps(jobCollectionName).getIndexInfo();
-        assertEquals(3, jobIndexes.size());
-        assertEquals("_id_", jobIndexes.get(0).getName());
-    }
-
-    @Test
-    void constructor_ensureIndexes_jobInstance_jobExecution_unique() {
-        var jobIndexes = mongoTemplate.indexOps(jobCollectionName).getIndexInfo();
-
-        var jobIndex = jobIndexes.get(1);
-        assertEquals("jobInstance_jobExecution_unique", jobIndex.getName());
-        var indexFields = jobIndex.getIndexFields();
-        assertEquals(3, indexFields.size());
-        assertEquals(JOB_NAME, indexFields.get(0).getKey());
-        assertEquals(JOB_KEY, indexFields.get(1).getKey());
-        assertEquals(JOB_EXECUTION_ID, indexFields.get(2).getKey());
-        assertTrue(jobIndex.isUnique());
-    }
-
-    @Test
-    void constructor_ensureIndexes_jobExecutionId_unique() {
-        var jobIndexes = mongoTemplate.indexOps(jobCollectionName).getIndexInfo();
-
-        var jobIndex = jobIndexes.get(2);
-        assertEquals("jobExecutionId_unique", jobIndex.getName());
-        var indexFields = jobIndex.getIndexFields();
-        assertEquals(1, indexFields.size());
-        assertEquals(JOB_EXECUTION_ID, indexFields.get(0).getKey());
-        assertTrue(jobIndex.isUnique());
-    }
-
-    @Test
     void isJobInstanceExists() {
         assertTrue(repository.isJobInstanceExists(jobExecution.getJobInstance().getJobName(), jobExecution.getJobParameters()));
 
@@ -814,6 +781,19 @@ class MongodbJobRepositoryTest {
     }
 
     @Test
+    void add_WithStepExecutionId() {
+        var step2 = jobExecution.createStepExecution("Step 2");
+        step2.setId(1L);
+
+        try {
+            repository.add(step2);
+            fail("IllegalArgumentException expected");
+        } catch (IllegalArgumentException e) {
+            assertEquals("to-be-saved (not updated) StepExecution can't already have an id assigned", e.getMessage());
+        }
+    }
+
+    @Test
     void addAll() {
         var step2 = jobExecution.createStepExecution("Step 2");
         var step3 = jobExecution.createStepExecution("Step 3");
@@ -843,6 +823,12 @@ class MongodbJobRepositoryTest {
         assertEquals("Step 3", actualStep3.getStepName());
         assertEquals(2L, actualStep3.getId());
         assertEquals(step3.getLastUpdated(), actualStep3.getLastUpdated());
+    }
+
+    @Test
+    void addAll_null() {
+        repository.addAll(null);  // no errors thrown
+        repository.addAll(Lists.newArrayList());  // no errors thrown
     }
 
     @Test

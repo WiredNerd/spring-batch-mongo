@@ -50,21 +50,6 @@ public class JobExecutionConverterTest {
     }
 
     @Test
-    void mongoInsertAndFind_jobInstance() {
-        var expected = buildJobExecution();
-
-        mongoTemplate.insert(JobExecutionConverter.convert(expected.getJobInstance(), expected.getJobParameters()), "Test");
-
-        var document = mongoTemplate.findOne(new Query(), Document.class, "Test");
-        assertEquals(jobKeyGenerator.generateKey(expected.getJobParameters()), document.getString("jobKey"));
-
-        var actual = JobExecutionConverter.convert(document);
-
-        assertEquals(expected.getJobInstance().getInstanceId(), actual.getJobInstance().getInstanceId());
-        assertEquals(expected.getJobInstance().getJobName(), actual.getJobInstance().getJobName());
-    }
-
-    @Test
     void converters() {
         var expected = buildJobExecution();
 
@@ -271,6 +256,7 @@ public class JobExecutionConverterTest {
         if (CollectionUtils.isEmpty(expected.getStepExecutions())) {
             assertTrue(CollectionUtils.isEmpty(actual.getStepExecutions()));
         } else {
+            assertEquals(expected.getStepExecutions().size(), actual.getStepExecutions().size());
             var expectedSteps = expected.getStepExecutions().toArray();
             var actualSteps = actual.getStepExecutions().toArray();
             for (int i = 0; i < expected.getStepExecutions().size(); i++) {
