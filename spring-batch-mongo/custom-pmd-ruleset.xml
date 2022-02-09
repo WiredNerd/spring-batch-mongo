@@ -69,6 +69,4 @@
     <rule ref="category/java/security.xml">
     </rule>
 
-    <exclude-pattern>.*/springbatch/mongo/Application.*</exclude-pattern>
-
 </ruleset>

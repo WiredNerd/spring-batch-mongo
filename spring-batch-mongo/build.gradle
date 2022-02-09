@@ -17,7 +17,7 @@ repositories {
     mavenCentral()
 }
 
-group 'wirednerd'
+group 'io.github.wirednerd'
 version '1.0.0'
 
 dependencies {
@@ -27,16 +27,19 @@ dependencies {
 
     testImplementation 'org.junit.jupiter:junit-jupiter'
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
-    testImplementation 'org.mongounit:mongounit:2.0.1'
     testImplementation 'org.mongodb:mongodb-driver-sync:4.4.1'
     testImplementation "org.testcontainers:testcontainers:1.16.3"
     testImplementation "org.testcontainers:junit-jupiter:1.16.3"
     testImplementation 'org.testcontainers:mongodb:1.16.3'
 }
 
+compileJava {
+    options.release = 11
+}
+
 javadoc {
     excludes = [
-            'wirednerd/springbatch/mongo/MongodbRepositoryConstants**'
+            'io/github/wirednerd/springbatch/mongo/MongodbRepositoryConstants**'
     ]
 }
 
@@ -91,8 +94,8 @@ pmd {
 pmdTest.enabled = false
 
 pitest {
-    targetClasses = ['wirednerd.springbatch.mongo.*']
-    threads = 4
+    targetClasses = ['io.github.wirednerd.springbatch.mongo.*']
+    threads = 8
     outputFormats = ['XML', 'HTML']
     timestampedReports = false
     junit5PluginVersion = '0.15'
@@ -116,10 +119,6 @@ artifacts {
     archives jar
     archives sourcesJar
     archives javadocJar
-}
-
-build {
-    dependsOn 'pitest'
 }
 
 bootJar {
