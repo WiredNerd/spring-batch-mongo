@@ -2,21 +2,13 @@ package wirednerd.springbatch.mongo.repository;
 
 import org.bson.Document;
 import org.junit.jupiter.api.Test;
-import org.mongounit.MongoUnitTest;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
+import wirednerd.springbatch.mongo.MongoDBContainerConfig;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-@SpringBootTest
-@MongoUnitTest
-class MongodbCounterTest {
-
-    @Autowired
-    private MongoTemplate mongoTemplate;
+class MongodbCounterTest extends MongoDBContainerConfig {
 
     @Test
     void constructor() {

@@ -8,17 +8,12 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.query.Query;
+import wirednerd.springbatch.mongo.MongoDBContainerConfig;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-@SpringBootTest
-@MongoUnitTest
-public
-class ExecutionContextConverterTest {
-
-    @Autowired
-    private MongoTemplate mongoTemplate;
+public class ExecutionContextConverterTest extends MongoDBContainerConfig {
 
     @Test
     void mongoInsertAndFind() {
