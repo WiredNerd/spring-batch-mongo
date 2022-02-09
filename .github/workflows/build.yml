@@ -13,9 +13,10 @@ jobs:
           java-version: 11
       - uses: gradle/gradle-build-action@v2
 
-      - run: cd spring-batch-mongo
       - run: ls
+        working-directory: spring-batch-mongo
       - run: gradle build pitest
+        working-directory: spring-batch-mongo
 
       - uses: actions/upload-artifact@v2
         with:
