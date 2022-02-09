@@ -1,0 +1,127 @@
+plugins {
+    id 'java'
+    id 'org.springframework.boot' version '2.6.3'
+    id "io.freefair.lombok" version "6.3.0"
+    id 'jacoco'
+    id 'pmd'
+    id 'project-report'
+    id 'info.solidsoft.pitest' version '1.7.0'
+}
+
+apply plugin: 'java'
+apply plugin: 'io.spring.dependency-management'
+apply plugin: 'jacoco'
+apply plugin: 'build-dashboard'
+
+repositories {
+    mavenCentral()
+}
+
+group 'wirednerd'
+version '1.0.0'
+
+dependencies {
+    implementation 'org.springframework.batch:spring-batch-core:4.3.4'
+    implementation 'org.springframework.data:spring-data-mongodb:3.3.1'
+    implementation 'org.netbeans.api:org-netbeans-api-annotations-common:RELEASE126'
+
+    testImplementation 'org.junit.jupiter:junit-jupiter'
+    testImplementation 'org.springframework.boot:spring-boot-starter-test'
+    testImplementation 'org.mongounit:mongounit:2.0.1'
+    testImplementation 'org.mongodb:mongodb-driver-sync:4.4.1'
+}
+
+javadoc {
+    excludes = [
+            'wirednerd/springbatch/mongo/MongodbRepositoryConstants**'
+    ]
+}
+
+test {
+    useJUnitPlatform()
+    finalizedBy jacocoTestReport
+}
+
+jacocoTestReport {
+    dependsOn test
+}
+
+jacocoTestCoverageVerification {
+    violationRules {
+        rule {
+            limit {
+                counter = 'CLASS'
+                value = 'COVEREDRATIO'
+                minimum = 0.95
+            }
+            limit {
+                counter = 'BRANCH'
+                value = 'COVEREDRATIO'
+                minimum = 0.85
+            }
+            limit {
+                counter = 'LINE'
+                value = 'COVEREDRATIO'
+                minimum = 0.95
+            }
+            limit {
+                counter = 'METHOD'
+                value = 'COVEREDRATIO'
+                minimum = 0.90
+            }
+            includes = [
+                    'wirednerd.springbatch.mongo.*'
+            ]
+            excludes = [
+            ]
+        }
+    }
+}
+
+pmd {
+    ignoreFailures = true
+    consoleOutput = true
+    ruleSetFiles = files("custom-pmd-ruleset.xml")
+    ruleSets = []
+}
+pmdTest.enabled = false
+
+pitest {
+    targetClasses = ['wirednerd.springbatch.mongo.*']
+    threads = 4
+    outputFormats = ['XML', 'HTML']
+    timestampedReports = false
+    junit5PluginVersion = '0.15'
+}
+
+htmlDependencyReport {
+    projects = project.allprojects
+}
+
+task sourcesJar(type: Jar) {
+    description = 'Assembles a jar archive containing the main sources.'
+    from sourceSets.main.allSource
+}
+
+task javadocJar(type: Jar, dependsOn: javadoc) {
+    description = 'Assembles a jar archive containing the javadoc.'
+    from javadoc.destinationDir
+}
+
+artifacts {
+    archives jar
+    archives sourcesJar
+    archives javadocJar
+}
+
+build {
+    dependsOn 'pitest'
+}
+
+bootJar {
+    enabled = false
+}
+
+jar {
+    enabled = true
+}

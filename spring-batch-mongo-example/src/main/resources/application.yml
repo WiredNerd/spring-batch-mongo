@@ -1,0 +1,9 @@
+spring:
+  data:
+    mongodb:
+      uri: mongodb://localhost:27017/?replicaSet=rs0
+      database: Test
+  batch:
+    job:
+      enabled: false
+
