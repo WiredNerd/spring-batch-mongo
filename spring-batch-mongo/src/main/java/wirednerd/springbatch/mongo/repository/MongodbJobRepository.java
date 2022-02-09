@@ -40,6 +40,7 @@ import static wirednerd.springbatch.mongo.MongodbRepositoryConstants.*;
  * <pre>
  * {
  *   "jobInstanceId": "&lt;long&gt;",
+ *   "jobName": "&lt;string&gt;",
  *   "jobKey": "&lt;string&gt;",
  *   "jobParameters": {
  *     "&lt;stringParameterKey&gt;": {
@@ -455,7 +456,7 @@ public class MongodbJobRepository implements JobRepository {
                         ExecutionContextConverter.convert(jobExecution.getExecutionContext())),
                 jobCollectionName);
 
-        Assert.state(updateResult.getModifiedCount() == 1,
+        Assert.state(updateResult.getMatchedCount() == 1,
                 () -> "Unable to update Execution Context for missing Job Execution.  jobExecutionId="
                         + jobExecution.getId());
     }
@@ -573,7 +574,7 @@ public class MongodbJobRepository implements JobRepository {
                             .filterArray(Criteria.where(ELEMENT_STEP_EXECUTION_ID).is(stepExecution.getId())),
                     jobCollectionName);
 
-            if (updateResult.getModifiedCount() == 0) {
+            if (updateResult.getMatchedCount() == 0) {
                 throw new OptimisticLockingFailureException("Attempt to update job execution id="
                         + stepExecution.getJobExecution().getId() + " with version=" + currentVersion
                         + " which was not found");

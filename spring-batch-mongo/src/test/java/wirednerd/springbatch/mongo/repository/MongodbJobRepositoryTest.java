@@ -23,6 +23,7 @@ import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.data.mongodb.core.query.Update;
 import org.springframework.test.util.ReflectionTestUtils;
+import wirednerd.springbatch.mongo.converter.ExecutionContextConverterTest;
 import wirednerd.springbatch.mongo.converter.JobExecutionConverter;
 import wirednerd.springbatch.mongo.converter.JobExecutionConverterTest;
 
@@ -643,6 +644,20 @@ class MongodbJobRepositoryTest {
 
         assertEquals(1, updatedDoc.get(EXECUTION_CONTEXT, Document.class).size());
         assertEquals("Updated Value", updatedDoc.get(EXECUTION_CONTEXT, Document.class).getString("Key"));
+    }
+
+    @Test
+    void updateJobExecutionContext_noChange() {
+        var expected = jobExecution.getExecutionContext();
+
+        repository.updateExecutionContext(jobExecution);
+
+        var updatedDoc = mongoTemplate.findOne(Query
+                .query(Criteria.where(JOB_EXECUTION_ID).is(jobExecution.getId())), Document.class, jobCollectionName);
+
+        var updatedJobExecution = JobExecutionConverter.convert(updatedDoc);
+
+        ExecutionContextConverterTest.compare(expected, updatedJobExecution.getExecutionContext());
     }
 
     @Test

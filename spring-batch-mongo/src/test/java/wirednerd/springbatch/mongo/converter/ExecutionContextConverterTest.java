@@ -14,6 +14,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @SpringBootTest
 @MongoUnitTest
+public
 class ExecutionContextConverterTest {
 
     @Autowired
