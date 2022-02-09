@@ -14,6 +14,7 @@ jobs:
       - uses: gradle/gradle-build-action@v2
 
       - run: cd spring-batch-mongo
+      - run: ls
       - run: gradle build pitest
 
       - uses: actions/upload-artifact@v2
@@ -22,6 +23,7 @@ jobs:
           path: mongo-batch-mongo/build/reports
 
   test-with-mongo-versions:
+    needs: [ build ]
     runs-on: ubuntu-latest
     strategy:
       matrix:
