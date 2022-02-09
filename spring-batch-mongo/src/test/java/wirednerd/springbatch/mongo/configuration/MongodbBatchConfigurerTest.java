@@ -1,34 +1,19 @@
 package wirednerd.springbatch.mongo.configuration;
 
-import com.mongodb.MongoClientOptions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.mongounit.MongoUnitTest;
 import org.springframework.batch.core.launch.support.SimpleJobLauncher;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.core.task.SyncTaskExecutor;
-import org.springframework.data.mongodb.MongoDatabaseFactory;
 import org.springframework.data.mongodb.MongoTransactionManager;
-import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.test.util.ReflectionTestUtils;
+import wirednerd.springbatch.mongo.MongoDBContainerConfig;
 import wirednerd.springbatch.mongo.explore.MongodbJobExplorer;
 import wirednerd.springbatch.mongo.repository.MongodbJobRepository;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static wirednerd.springbatch.mongo.MongodbRepositoryConstants.*;
 
-@SpringBootTest
-@MongoUnitTest
-class MongodbBatchConfigurerTest {
-
-    private MongoClientOptions a;
-
-    @Autowired
-    private MongoTemplate mongoTemplate;
-
-    @Autowired
-    private MongoDatabaseFactory mongoDatabaseFactory;
+class MongodbBatchConfigurerTest extends MongoDBContainerConfig {
 
     private MongoTransactionManager mongoTransactionManager;
 

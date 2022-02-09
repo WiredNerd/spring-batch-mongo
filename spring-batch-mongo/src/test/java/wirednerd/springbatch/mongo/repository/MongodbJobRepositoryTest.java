@@ -9,20 +9,17 @@ import org.bson.Document;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.mongounit.MongoUnitTest;
 import org.springframework.batch.core.*;
 import org.springframework.batch.core.repository.JobExecutionAlreadyRunningException;
 import org.springframework.batch.core.repository.JobInstanceAlreadyCompleteException;
 import org.springframework.batch.core.repository.JobRestartException;
 import org.springframework.batch.item.ExecutionContext;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.dao.OptimisticLockingFailureException;
-import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.data.mongodb.core.query.Update;
 import org.springframework.test.util.ReflectionTestUtils;
+import wirednerd.springbatch.mongo.MongoDBContainerConfig;
 import wirednerd.springbatch.mongo.converter.ExecutionContextConverterTest;
 import wirednerd.springbatch.mongo.converter.JobExecutionConverter;
 import wirednerd.springbatch.mongo.converter.JobExecutionConverterTest;
@@ -35,12 +32,7 @@ import java.util.LinkedHashMap;
 import static org.junit.jupiter.api.Assertions.*;
 import static wirednerd.springbatch.mongo.MongodbRepositoryConstants.*;
 
-@SpringBootTest
-@MongoUnitTest
-class MongodbJobRepositoryTest {
-
-    @Autowired
-    private MongoTemplate mongoTemplate;
+class MongodbJobRepositoryTest extends MongoDBContainerConfig {
 
     private MongodbJobRepository repository;
 

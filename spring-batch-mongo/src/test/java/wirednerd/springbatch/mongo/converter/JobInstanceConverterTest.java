@@ -2,26 +2,18 @@ package wirednerd.springbatch.mongo.converter;
 
 import org.bson.Document;
 import org.junit.jupiter.api.Test;
-import org.mongounit.MongoUnitTest;
 import org.springframework.batch.core.DefaultJobKeyGenerator;
 import org.springframework.batch.core.JobInstance;
 import org.springframework.batch.core.JobKeyGenerator;
 import org.springframework.batch.core.JobParameters;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.query.Query;
+import wirednerd.springbatch.mongo.MongoDBContainerConfig;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.fail;
 import static wirednerd.springbatch.mongo.converter.JobExecutionConverterTest.buildJobExecution;
 
-@SpringBootTest
-@MongoUnitTest
-class JobInstanceConverterTest {
-
-    @Autowired
-    private MongoTemplate mongoTemplate;
+class JobInstanceConverterTest extends MongoDBContainerConfig {
 
     private final JobKeyGenerator<JobParameters> jobKeyGenerator = new DefaultJobKeyGenerator();
 

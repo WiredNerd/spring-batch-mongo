@@ -2,16 +2,13 @@ package wirednerd.springbatch.mongo.explore;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.mongounit.MongoUnitTest;
 import org.springframework.batch.core.JobExecution;
 import org.springframework.batch.core.JobInstance;
 import org.springframework.batch.core.JobParameter;
 import org.springframework.batch.core.JobParameters;
 import org.springframework.batch.core.launch.NoSuchJobException;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.query.Query;
+import wirednerd.springbatch.mongo.MongoDBContainerConfig;
 import wirednerd.springbatch.mongo.converter.JobExecutionConverter;
 
 import java.util.*;
@@ -19,12 +16,7 @@ import java.util.stream.Collectors;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-@SpringBootTest
-@MongoUnitTest
-class MongodbJobExplorerTest {
-
-    @Autowired
-    private MongoTemplate mongoTemplate;
+class MongodbJobExplorerTest extends MongoDBContainerConfig {
 
     private MongodbJobExplorer explorer;
 

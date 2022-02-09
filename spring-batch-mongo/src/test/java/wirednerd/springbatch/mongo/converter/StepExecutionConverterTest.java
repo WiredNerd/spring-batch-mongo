@@ -3,25 +3,17 @@ package wirednerd.springbatch.mongo.converter;
 import org.assertj.core.util.Lists;
 import org.bson.Document;
 import org.junit.jupiter.api.Test;
-import org.mongounit.MongoUnitTest;
 import org.springframework.batch.core.*;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.util.CollectionUtils;
+import wirednerd.springbatch.mongo.MongoDBContainerConfig;
 
 import java.sql.Date;
 import java.time.OffsetDateTime;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-@SpringBootTest
-@MongoUnitTest
-class StepExecutionConverterTest {
-
-    @Autowired
-    private MongoTemplate mongoTemplate;
+class StepExecutionConverterTest extends MongoDBContainerConfig {
 
     @Test
     void mongoInsertAndFind() {

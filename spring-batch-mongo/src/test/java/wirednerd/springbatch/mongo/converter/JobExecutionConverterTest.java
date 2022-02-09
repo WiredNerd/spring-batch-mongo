@@ -3,13 +3,10 @@ package wirednerd.springbatch.mongo.converter;
 import org.assertj.core.util.Lists;
 import org.bson.Document;
 import org.junit.jupiter.api.Test;
-import org.mongounit.MongoUnitTest;
 import org.springframework.batch.core.*;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.util.CollectionUtils;
+import wirednerd.springbatch.mongo.MongoDBContainerConfig;
 
 import java.sql.Date;
 import java.time.OffsetDateTime;
@@ -17,12 +14,7 @@ import java.util.LinkedHashMap;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-@SpringBootTest
-@MongoUnitTest
-public class JobExecutionConverterTest {
-
-    @Autowired
-    private MongoTemplate mongoTemplate;
+public class JobExecutionConverterTest extends MongoDBContainerConfig {
 
     private final JobKeyGenerator<JobParameters> jobKeyGenerator = new DefaultJobKeyGenerator();
 
