@@ -13,7 +13,8 @@ jobs:
           java-version: 11
       - uses: gradle/gradle-build-action@v2
 
-      - run: /spring-batch-mongo/gradle build pitest
+      - run: cd spring-batch-mongo
+      - run: gradle build pitest
 
       - uses: actions/upload-artifact@v2
         with:
@@ -33,7 +34,8 @@ jobs:
           java-version: 11
       - uses: gradle/gradle-build-action@v2
 
-      - run: /spring-batch-mongo/gradle test -Dmongo=${{ matrix.mongo }}
+      - run: cd spring-batch-mongo
+      - run: gradle test -Dmongo=${{ matrix.mongo }}
 
       - uses: actions/upload-artifact@v2
         with:
