@@ -1,7 +1,7 @@
 plugins {
     id 'java'
     id 'org.springframework.boot' version '2.6.3'
-    id "io.freefair.lombok" version "6.3.0"
+    id "io.freefair.lombok" version "6.4.0"
 }
 
 apply plugin: 'java'
@@ -11,7 +11,7 @@ repositories {
     mavenCentral()
 }
 
-group 'wirednerd'
+group 'io.github.wirednerd'
 version '1.0.0'
 
 dependencies {

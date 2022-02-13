@@ -2,12 +2,9 @@
 
 This package allows users to use a MongoDB based Job Repository with Spring Batch.
 
-There are several other example projects that accomplish this by creating instances of the for DAO interfaces used by
-Spring Batch. However, these store the job execution data across multiple collections. And there is no good way to link
-the collections together. They also do not enable transaction management, which is required for spring batch to work
-correctly.
+Instead of creating instances of the for DAO interfaces used by Spring Batch. This package instead implements instances
+of the JobRepository and JobExplorer.
 
-This package instead implements instances of the JobRepository and JobExplorer.  
 The job execution data is stored in a single collection as a document that includes job, step, parameter, and context
 data. This package also includes an instance of BatchConfigurer. It configures the JobRepository, JobExplorer,
 JobLauncher, TransactionManager, and required Indexes.
