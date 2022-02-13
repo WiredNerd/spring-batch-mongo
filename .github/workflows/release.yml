@@ -15,7 +15,6 @@ jobs:
           distribution: zulu
           java-version: 11
       - run: gradle publish
-        working-directory: spring-batch-mongo
         env:
           OSSRH_USERNAME: ${{ secrets.OSSRH_USERNAME }}
           OSSRH_PASSWORD: ${{ secrets.OSSRH_PASSWORD }}

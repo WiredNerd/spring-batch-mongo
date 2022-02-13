@@ -14,7 +14,6 @@ jobs:
       - uses: gradle/gradle-build-action@v2
 
       - run: gradle build pitest
-        working-directory: spring-batch-mongo
 
       - uses: actions/upload-artifact@v2
         with:

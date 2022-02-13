@@ -1,8 +1,7 @@
 plugins {
     id 'java'
-    id 'org.springframework.boot' version '2.6.3'
     id "io.freefair.lombok" version "6.4.0"
-    id 'jacoco'
+//    id 'jacoco'
     id 'pmd'
     id 'project-report'
     id 'info.solidsoft.pitest' version '1.7.0'
@@ -11,8 +10,7 @@ plugins {
 }
 
 apply plugin: 'java'
-apply plugin: 'io.spring.dependency-management'
-apply plugin: 'jacoco'
+//apply plugin: 'jacoco'
 apply plugin: 'build-dashboard'
 
 repositories {
@@ -28,7 +26,7 @@ dependencies {
     implementation 'org.netbeans.api:org-netbeans-api-annotations-common:RELEASE126'
 
     testImplementation 'org.junit.jupiter:junit-jupiter'
-    testImplementation 'org.springframework.boot:spring-boot-starter-test'
+    testImplementation 'org.springframework.boot:spring-boot-starter-test:2.6.3'
     testImplementation 'org.mongodb:mongodb-driver-sync:4.4.1'
     testImplementation "org.testcontainers:testcontainers:1.16.3"
     testImplementation "org.testcontainers:junit-jupiter:1.16.3"
@@ -54,44 +52,44 @@ javadoc {
 test {
     systemProperties = System.properties
     useJUnitPlatform()
-    finalizedBy jacocoTestReport
+//    finalizedBy jacocoTestReport
 }
 
-jacocoTestReport {
-    dependsOn test
-}
-
-jacocoTestCoverageVerification {
-    violationRules {
-        rule {
-            limit {
-                counter = 'CLASS'
-                value = 'COVEREDRATIO'
-                minimum = 0.95
-            }
-            limit {
-                counter = 'BRANCH'
-                value = 'COVEREDRATIO'
-                minimum = 0.85
-            }
-            limit {
-                counter = 'LINE'
-                value = 'COVEREDRATIO'
-                minimum = 0.95
-            }
-            limit {
-                counter = 'METHOD'
-                value = 'COVEREDRATIO'
-                minimum = 0.90
-            }
-            includes = [
-                    'wirednerd.springbatch.mongo.*'
-            ]
-            excludes = [
-            ]
-        }
-    }
-}
+//jacocoTestReport {
+//    dependsOn test
+//}
+//
+//jacocoTestCoverageVerification {
+//    violationRules {
+//        rule {
+//            limit {
+//                counter = 'CLASS'
+//                value = 'COVEREDRATIO'
+//                minimum = 0.95
+//            }
+//            limit {
+//                counter = 'BRANCH'
+//                value = 'COVEREDRATIO'
+//                minimum = 0.85
+//            }
+//            limit {
+//                counter = 'LINE'
+//                value = 'COVEREDRATIO'
+//                minimum = 0.95
+//            }
+//            limit {
+//                counter = 'METHOD'
+//                value = 'COVEREDRATIO'
+//                minimum = 0.90
+//            }
+//            includes = [
+//                    'io.github.wirednerd.springbatch.mongo.*'
+//            ]
+//            excludes = [
+//            ]
+//        }
+//    }
+//}
 
 pmd {
     ignoreFailures = true
@@ -111,10 +109,6 @@ pitest {
 
 htmlDependencyReport {
     projects = project.allprojects
-}
-
-bootJar {
-    enabled = false
 }
 
 // disables building plain.jar
