@@ -14,9 +14,13 @@ jobs:
         with:
           distribution: zulu
           java-version: 11
-      - run: gradle publish
+
+      - uses: gradle/gradle-build-action@v2
         env:
           OSSRH_USERNAME: ${{ secrets.OSSRH_USERNAME }}
           OSSRH_PASSWORD: ${{ secrets.OSSRH_PASSWORD }}
           SIGNING_SIGNINGKEY: ${{ secrets.SIGNING_SIGNINGKEY }}
           SIGNING_PASSWORD: ${{ secrets.SIGNING_PASSWORD }}
+        with:
+          gradle-version: 7.4
+          arguments: publish
