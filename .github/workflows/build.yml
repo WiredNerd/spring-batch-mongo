@@ -13,8 +13,6 @@ jobs:
           java-version: 11
       - uses: gradle/gradle-build-action@v2
 
-      - run: ls
-        working-directory: spring-batch-mongo
       - run: gradle build pitest
         working-directory: spring-batch-mongo
 
@@ -23,7 +21,7 @@ jobs:
           name: build-reports
           path: mongo-batch-mongo/build/reports
 
-  test-with-mongo-versions:
+  mongo-version:
     needs: [ build ]
     runs-on: ubuntu-latest
     strategy:
@@ -37,8 +35,8 @@ jobs:
           java-version: 11
       - uses: gradle/gradle-build-action@v2
 
-      - run: cd spring-batch-mongo
       - run: gradle test -Dmongo=${{ matrix.mongo }}
+        working-directory: spring-batch-mongo
 
       - uses: actions/upload-artifact@v2
         with:

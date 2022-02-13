@@ -1,11 +1,13 @@
 plugins {
     id 'java'
     id 'org.springframework.boot' version '2.6.3'
-    id "io.freefair.lombok" version "6.3.0"
+    id "io.freefair.lombok" version "6.4.0"
     id 'jacoco'
     id 'pmd'
     id 'project-report'
     id 'info.solidsoft.pitest' version '1.7.0'
+    id 'signing'
+    id 'maven-publish'
 }
 
 apply plugin: 'java'
@@ -18,7 +20,7 @@ repositories {
 }
 
 group 'io.github.wirednerd'
-version '1.0.0'
+version '1.0.0-SNAPSHOT'
 
 dependencies {
     implementation 'org.springframework.batch:spring-batch-core:4.3.4'
@@ -37,7 +39,13 @@ compileJava {
     options.release = 11
 }
 
+java {
+    withSourcesJar()
+    withJavadocJar()
+}
+
 javadoc {
+    options.addBooleanOption('html5', true)
     excludes = [
             'io/github/wirednerd/springbatch/mongo/MongodbRepositoryConstants**'
     ]
@@ -105,26 +113,62 @@ htmlDependencyReport {
     projects = project.allprojects
 }
 
-task sourcesJar(type: Jar) {
-    description = 'Assembles a jar archive containing the main sources.'
-    from sourceSets.main.allSource
-}
-
-task javadocJar(type: Jar, dependsOn: javadoc) {
-    description = 'Assembles a jar archive containing the javadoc.'
-    from javadoc.destinationDir
-}
-
-artifacts {
-    archives jar
-    archives sourcesJar
-    archives javadocJar
-}
-
 bootJar {
     enabled = false
 }
 
+// disables building plain.jar
 jar {
     enabled = true
+    archiveClassifier = '' //use empty string
+}
+
+publishing {
+    publications {
+        mavenJava(MavenPublication) {
+            from components.java
+            pom {
+                name = "io.github.wirednerd:spring-batch-mongo"
+                description = 'Store Spring Batch Execution Data in MongoDB'
+                url = 'https://github.com/WiredNerd/spring-batch-mongo'
+                licenses {
+                    license {
+                        name = 'MIT License'
+                        url = 'http://www.opensource.org/licenses/mit-license.php'
+                    }
+                }
+                developers {
+                    developer {
+                        id = 'wirednerd'
+                        name = 'Peter Busch'
+                        organizationUrl = 'https://github.com/WiredNerd'
+                    }
+                }
+                scm {
+                    connection = 'scm:git:git://github.com/WiredNerd/steam-webapi-kt.git'
+                    developerConnection = 'scm:git:ssh://github.com/WiredNerd/steam-webapi-kt.git'
+                    url = 'https://github.com/WiredNerd/steam-webapi-kt'
+                }
+            }
+        }
+    }
+    repositories {
+        maven {
+            def releasesRepoUrl = uri("https://s01.oss.sonatype.org/service/local/staging/deploy/maven2/")
+            def snapshotsRepoUrl = uri("https://s01.oss.sonatype.org/content/repositories/snapshots/")
+            name = "OSSRH"
+            url = version.endsWith('SNAPSHOT') ? snapshotsRepoUrl : releasesRepoUrl
+            credentials {
+                username = findProperty("OSSRH_USERNAME")
+                password = findProperty("OSSRH_PASSWORD")
+            }
+        }
+    }
+}
+
+signing {
+    def signingKey = findProperty("SIGNING_SIGNINGKEY")
+    def signingPassword = findProperty("SIGNING_PASSWORD")
+    useInMemoryPgpKeys(signingKey, signingPassword)
+    sign publishing.publications.mavenJava
 }

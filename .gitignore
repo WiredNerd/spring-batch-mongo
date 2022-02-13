@@ -35,6 +35,6 @@ gen/**
 *.ipr
 *.iws
 .gradletasknamecache
-.gradle/
+.gradle
 build/
 bin/
