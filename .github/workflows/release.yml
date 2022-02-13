@@ -17,14 +17,15 @@ jobs:
 
       - uses: gradle/gradle-build-action@v2
         with:
-          OSSRH_USERNAME: ${{ secrets.OSSRH_USERNAME }}
-          OSSRH_PASSWORD: ${{ secrets.OSSRH_PASSWORD }}
-          SIGNING_SIGNINGKEY: ${{ secrets.SIGNING_SIGNINGKEY }}
-          SIGNING_PASSWORD: ${{ secrets.SIGNING_PASSWORD }}
           gradle-version: 7.4
           
       - run: gradle publish -P=SIGNING_SIGNINGKEY="${{ secrets.SIGNING_SIGNINGKEY }}"
         env:
+          OSSRH_USERNAME: ${{ secrets.OSSRH_USERNAME }}
+          OSSRH_PASSWORD: ${{ secrets.OSSRH_PASSWORD }}
+          SIGNING_SIGNINGKEY: ${{ secrets.SIGNING_SIGNINGKEY }}
+          SIGNING_PASSWORD: ${{ secrets.SIGNING_PASSWORD }}
+        with:
           OSSRH_USERNAME: ${{ secrets.OSSRH_USERNAME }}
           OSSRH_PASSWORD: ${{ secrets.OSSRH_PASSWORD }}
           SIGNING_SIGNINGKEY: ${{ secrets.SIGNING_SIGNINGKEY }}
