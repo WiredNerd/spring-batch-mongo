@@ -22,9 +22,10 @@ jobs:
           SIGNING_SIGNINGKEY: ${{ secrets.SIGNING_SIGNINGKEY }}
           SIGNING_PASSWORD: ${{ secrets.SIGNING_PASSWORD }}
           gradle-version: 7.4
+          
+      - run: gradle publish
         env:
           OSSRH_USERNAME: ${{ secrets.OSSRH_USERNAME }}
           OSSRH_PASSWORD: ${{ secrets.OSSRH_PASSWORD }}
           SIGNING_SIGNINGKEY: ${{ secrets.SIGNING_SIGNINGKEY }}
           SIGNING_PASSWORD: ${{ secrets.SIGNING_PASSWORD }}
-      - run: gradle publish
