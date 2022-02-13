@@ -11,9 +11,6 @@ repositories {
     mavenCentral()
 }
 
-group 'io.github.wirednerd'
-version '1.0.0'
-
 dependencies {
     implementation 'commons-io:commons-io:20030203.000550'
 
