@@ -19,7 +19,8 @@ jobs:
         with:
           gradle-version: 7.4
           
-      - run: gradle publish -P=SIGNING_SIGNINGKEY="${{ secrets.SIGNING_SIGNINGKEY }}" -P=SIGNING_PASSWORD="${{ secrets.SIGNING_PASSWORD }}"
-        env:
-          OSSRH_USERNAME: ${{ secrets.OSSRH_USERNAME }}
-          OSSRH_PASSWORD: ${{ secrets.OSSRH_PASSWORD }}
+      - run: |
+          gradle publish -P=SIGNING_SIGNINGKEY="${{ secrets.SIGNING_SIGNINGKEY }}" \
+            -P=SIGNING_PASSWORD="${{ secrets.SIGNING_PASSWORD }}" \
+            -P=OSSRH_USERNAME="${{ secrets.OSSRH_USERNAME }}" \
+            -P=OSSRH_PASSWORD="${{ secrets.OSSRH_PASSWORD }}"
