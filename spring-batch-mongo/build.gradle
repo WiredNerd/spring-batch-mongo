@@ -1,5 +1,5 @@
 plugins {
-    id 'java'
+    id 'java-library'
     id "io.freefair.lombok" version "6.4.0"
 //    id 'jacoco'
     id 'pmd'
@@ -19,7 +19,7 @@ repositories {
 
 dependencies {
     implementation 'org.springframework.batch:spring-batch-core:4.3.4'
-    implementation 'org.springframework.data:spring-data-mongodb:3.3.1'
+    implementation 'org.springframework.data:spring-data-mongodb:3.2.8'
     implementation 'org.netbeans.api:org-netbeans-api-annotations-common:RELEASE126'
 
     testImplementation 'org.junit.jupiter:junit-jupiter'

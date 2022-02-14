@@ -192,12 +192,12 @@ class MongodbJobRepositoryTest extends MongoDBContainerConfig {
     void createJobExecutionWithConfigName_replaceJobInstance() {
         var jobInstance = repository.createJobInstance("New Job", jobExecution.getJobParameters());
 
-        assertEquals(1, mongoTemplate.find(new Query(Criteria.where("jobInstanceId").is(jobInstance.getId())).addCriteria(Criteria.where(JOB_EXECUTION_ID).isNull()), Document.class, jobCollectionName).size());
+        assertEquals(1, mongoTemplate.find(new Query(Criteria.where("jobInstanceId").is(jobInstance.getId())).addCriteria(Criteria.where(JOB_EXECUTION_ID).is(null)), Document.class, jobCollectionName).size());
         assertEquals(0, mongoTemplate.find(new Query(Criteria.where("jobInstanceId").is(jobInstance.getId())).addCriteria(Criteria.where(JOB_EXECUTION_ID).gte(0L)), Document.class, jobCollectionName).size());
 
         var jobExecution = repository.createJobExecution(jobInstance, this.jobExecution.getJobParameters(), this.jobExecution.getJobConfigurationName());
 
-        assertEquals(0, mongoTemplate.find(new Query(Criteria.where("jobInstanceId").is(jobInstance.getId())).addCriteria(Criteria.where(JOB_EXECUTION_ID).isNull()), Document.class, jobCollectionName).size());
+        assertEquals(0, mongoTemplate.find(new Query(Criteria.where("jobInstanceId").is(jobInstance.getId())).addCriteria(Criteria.where(JOB_EXECUTION_ID).is(null)), Document.class, jobCollectionName).size());
         assertEquals(1, mongoTemplate.find(new Query(Criteria.where("jobInstanceId").is(jobInstance.getId())).addCriteria(Criteria.where(JOB_EXECUTION_ID).is(jobExecution.getId())), Document.class, jobCollectionName).size());
     }
 

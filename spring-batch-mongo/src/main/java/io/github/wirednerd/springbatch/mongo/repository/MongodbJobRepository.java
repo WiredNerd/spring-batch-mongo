@@ -324,7 +324,7 @@ public class MongodbJobRepository implements JobRepository {
         mongoTemplate.upsert(new Query()
                         .addCriteria(Criteria.where(JOB_NAME).is(jobExecution.getJobInstance().getJobName()))
                         .addCriteria(Criteria.where(JOB_KEY).is(jobKeyGenerator.generateKey(jobExecution.getJobParameters())))
-                        .addCriteria(Criteria.where(JOB_EXECUTION_ID).isNull()),
+                        .addCriteria(Criteria.where(JOB_EXECUTION_ID).is(null)),
                 Update.fromDocument(JobExecutionConverter.convert(jobExecution)), jobCollectionName);
 
         return jobExecution;
