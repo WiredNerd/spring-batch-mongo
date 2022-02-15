@@ -256,7 +256,7 @@ public class MongodbJobExplorer implements JobExplorer {
     public Set<JobExecution> findRunningJobExecutions(String jobName) {
         return mongoTemplate.find(Query.query(Criteria.where(JOB_NAME).is(jobName))
                                 .addCriteria(Criteria.where(START_TIME).ne(null))
-                                .addCriteria(Criteria.where(END_TIME).isNull())
+                                .addCriteria(Criteria.where(END_TIME).is(null))
                                 .with(Sort.by(JOB_EXECUTION_ID).descending()),
                         Document.class, jobCollectionName)
                 .stream().map(JobExecutionConverter::convert)
