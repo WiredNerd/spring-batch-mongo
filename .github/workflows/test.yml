@@ -1,10 +1,9 @@
-name: Test with various MongoDB Images
+name: Test
 
-on: [ workflow_dispatch ]
+on: [ pull_request, workflow_dispatch ]
 
 jobs:
-  mongo-version:
-    needs: [ build ]
+  mongo-version-test:
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -25,3 +24,22 @@ jobs:
         with:
           name: test-with-mongo-${{ matrix.mongo }}
           path: mongo-batch-mongo/build/reports/tests/test
+
+  pitest:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-java@v2
+        with:
+          distribution: zulu
+          java-version: 11
+
+      - uses: gradle/gradle-build-action@v2
+        with:
+          gradle-version: 7.4
+          arguments: pitest
+
+      - uses: actions/upload-artifact@v2
+        with:
+          name: pitest
+          path: mongo-batch-mongo/build/reports
