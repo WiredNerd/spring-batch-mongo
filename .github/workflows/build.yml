@@ -12,10 +12,7 @@ jobs:
           distribution: zulu
           java-version: 11
 
-      - uses: addnab/docker-run-action@v3
-        with:
-          image: mongo:latest
-          options: -p 27017:27017
+      - run: docker run -it -p 27017:27017 mongo:5.0
 
       - uses: gradle/gradle-build-action@v2
         with:
