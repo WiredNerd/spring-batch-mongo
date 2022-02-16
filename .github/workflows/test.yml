@@ -18,6 +18,10 @@ jobs:
         with:
           gradle-version: 7.4
 
+      - uses: addnab/docker-run-action@v3
+        with:
+          image: mongo:${{ matrix.mongo }}
+
       - run: gradle test -Dmongo=${{ matrix.mongo }}
 
       - uses: actions/upload-artifact@v2
