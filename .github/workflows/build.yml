@@ -15,6 +15,7 @@ jobs:
       - uses: addnab/docker-run-action@v3
         with:
           image: mongo:latest
+          options: -p 27017:27017
 
       - uses: gradle/gradle-build-action@v2
         with:
