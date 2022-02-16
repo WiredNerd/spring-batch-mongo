@@ -12,7 +12,7 @@ jobs:
           distribution: zulu
           java-version: 11
 
-      - run: docker run -it -p 27017:27017 mongo:5.0
+      - run: docker run -d -p 27017:27017 mongo:5.0
 
       - uses: gradle/gradle-build-action@v2
         with:
