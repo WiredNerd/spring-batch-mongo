@@ -16,7 +16,8 @@ jobs:
         with:
           image: mongo:5.0
           options: -p 27017:27017
-          run: rs.initiate()
+          run: |
+            mongosh db.getName()
 
       - uses: gradle/gradle-build-action@v2
         with:
