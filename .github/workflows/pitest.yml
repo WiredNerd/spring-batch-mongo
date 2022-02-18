@@ -7,14 +7,14 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: setup mongodb
-          run: |
-            docker run -d -p 27017:27017 --name mongoSvr mongo:5.0 mongod --replSet rs0 --port 27017
-            pip install wait-for-it
-            wait-for-it --service localhost:27017
-            docker exec -i mongoSvr mongo --eval "rs.initiate()"
+        run: |
+          docker run -d -p 27017:27017 --name mongoSvr mongo:5.0 mongod --replSet rs0 --port 27017
+          pip install wait-for-it
+          wait-for-it --service localhost:27017
+          docker exec -i mongoSvr mongo --eval "rs.initiate()"
       - name: if failed, get mongo logs
-          run: docker logs mongoSvr
-          if: failure()
+        run: docker logs mongoSvr
+        if: failure()
 
       - uses: actions/checkout@v2
       - uses: actions/setup-java@v2
