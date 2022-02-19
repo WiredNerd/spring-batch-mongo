@@ -8,7 +8,7 @@ jobs:
     strategy:
       matrix:
         mongo: [ "4.0", "4.2", "4.4", "5.0" ]
-        springbootVersion: [ "2.5.9", "2.6.3" ]
+        springbootVersion: [ "2.5.+", "2.6.+" ]
     steps:
       - name: setup mongodb 1
         run: docker run -d -p 27017:27017 --name mongoSvr mongo:${{ matrix.mongo }} mongod --replSet rs0 --port 27017

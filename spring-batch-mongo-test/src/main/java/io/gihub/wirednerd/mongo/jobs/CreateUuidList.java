@@ -7,9 +7,7 @@ import org.springframework.batch.core.StepExecution;
 import org.springframework.batch.core.annotation.BeforeStep;
 import org.springframework.batch.core.configuration.annotation.JobBuilderFactory;
 import org.springframework.batch.core.configuration.annotation.StepBuilderFactory;
-import org.springframework.batch.item.ItemProcessor;
-import org.springframework.batch.item.ItemReader;
-import org.springframework.batch.item.ItemWriter;
+import org.springframework.batch.item.*;
 import org.springframework.batch.item.support.ListItemWriter;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -41,26 +39,49 @@ public class CreateUuidList {
 
     @Bean
     public ItemReader<String> generateUuidValues() {
-        return new ItemReader<String>() {
+        return new uuidItemReader();
+    }
 
-            long limit = 0;
+    class uuidItemReader implements ItemReader<String>, ItemStream {
+        long processed = 0;
+        long limit = 0;
+        long errorOn = Long.MAX_VALUE;
 
-            @BeforeStep
-            public void beforeStep(StepExecution stepExecution) {
-                JobParameters jobParameters = stepExecution.getJobParameters();
+        @BeforeStep
+        public void beforeStep(StepExecution stepExecution) {
+            JobParameters jobParameters = stepExecution.getJobParameters();
 
-                limit = jobParameters.getLong("limit", Long.valueOf(10));
+            limit = jobParameters.getLong("limit", Long.valueOf(10));
+            errorOn = jobParameters.getLong("errorOn", Long.MAX_VALUE);
+        }
+
+        @Override
+        public void open(ExecutionContext executionContext) throws ItemStreamException {
+            if (executionContext.containsKey("processed")) {
+                processed = executionContext.getLong("processed");
             }
+        }
 
-            @Override
-            public String read() {
-                if (limit <= 0) {
-                    return null;
-                }
-                limit--;
-                return UUID.randomUUID().toString();
+        @Override
+        public String read() {
+            if (processed >= limit) {
+                return null;
             }
-        };
+            if (processed == errorOn) {
+                throw new RuntimeException("Failed to process row " + processed);
+            }
+            processed++;
+            return UUID.randomUUID().toString();
+        }
+
+        @Override
+        public void update(ExecutionContext executionContext) throws ItemStreamException {
+            executionContext.putLong("processed", processed);
+        }
+
+        @Override
+        public void close() throws ItemStreamException {
+        }
     }
 
     @Bean
