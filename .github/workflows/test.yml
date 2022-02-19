@@ -15,9 +15,10 @@ jobs:
       - name: setup mongodb 2
         uses: nick-fields/retry@v2
         with:
-          timeout_minutes: 1
+          timeout_seconds: 10
           max_attempts: 10
           retry_wait_seconds: 2
+          warning_on_retry: false
           command: docker exec -i mongoSvr mongo --eval "rs.initiate()"
       - name: if failed, get mongo logs
         run: docker logs mongoSvr
@@ -32,7 +33,7 @@ jobs:
         with:
           gradle-version: 7.4
 
-      - run: gradle test -Dmongo=${{ matrix.mongo }} -PspringbootVersion=${{ matrix.springbootVersion }}
+      - run: gradle test -PspringbootVersion=${{ matrix.springbootVersion }}
 
       - uses: actions/upload-artifact@v2
         if: always()
@@ -50,9 +51,10 @@ jobs:
       - name: setup mongodb 2
         uses: nick-fields/retry@v2
         with:
-          timeout_minutes: 1
+          timeout_seconds: 10
           max_attempts: 10
           retry_wait_seconds: 2
+          warning_on_retry: false
           command: docker exec -i mongoSvr mongo --eval "rs.initiate()"
       - name: if failed, get mongo logs
         run: docker logs mongoSvr
