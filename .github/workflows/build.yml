@@ -6,12 +6,15 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - name: setup mongodb
-        run: |
-          docker run -d -p 27017:27017 --name mongoSvr mongo:5.0 mongod --replSet rs0 --port 27017
-          pip install wait-for-it
-          wait-for-it --service localhost:27017
-          docker exec -i mongoSvr mongo --eval "rs.initiate()"
+      - name: setup mongodb 1
+        run: docker run -d -p 27017:27017 --name mongoSvr mongo:${{ matrix.mongo }} mongod --replSet rs0 --port 27017
+      - name: setup mongodb 2
+        uses: nick-fields/retry@v2
+        with:
+          timeout_minutes: 1
+          max_attempts: 10
+          retry_wait_seconds: 2
+          command: docker exec -i mongoSvr mongo --eval "rs.initiate()"
       - name: if failed, get mongo logs
         run: docker logs mongoSvr
         if: failure()
