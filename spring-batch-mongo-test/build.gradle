@@ -1,7 +1,7 @@
 plugins {
     id 'java'
     id "org.springframework.boot" version "${springbootVersion}"
-    id "io.freefair.lombok" version "6.4.0"
+    id "io.freefair.lombok" version "6.+"
 }
 
 apply plugin: 'java'
@@ -12,9 +12,16 @@ repositories {
 }
 
 dependencies {
+    if (springbootVersion.startsWith("2.5")) {
+        springCloudVersion = "2020.+"
+    }
+
+    implementation platform("org.springframework.cloud:spring-cloud-dependencies:${springCloudVersion}")
+
     implementation 'org.springframework.boot:spring-boot-starter-web'
     implementation 'org.springframework.boot:spring-boot-starter-batch'
     implementation 'org.springframework.boot:spring-boot-starter-data-mongodb'
+    implementation "org.springframework.cloud:spring-cloud-starter-sleuth"
 
     implementation project(":spring-batch-mongo")
 

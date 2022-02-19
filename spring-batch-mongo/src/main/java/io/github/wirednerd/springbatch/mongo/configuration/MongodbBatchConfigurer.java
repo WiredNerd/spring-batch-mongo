@@ -1,5 +1,6 @@
 package io.github.wirednerd.springbatch.mongo.configuration;
 
+import io.github.wirednerd.springbatch.mongo.explore.MongodbJobExplorer;
 import io.github.wirednerd.springbatch.mongo.repository.MongodbJobRepository;
 import lombok.NoArgsConstructor;
 import org.springframework.batch.core.configuration.annotation.BatchConfigurer;
@@ -16,13 +17,12 @@ import org.springframework.lang.Nullable;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.annotation.EnableTransactionManagement;
 import org.springframework.util.Assert;
-import io.github.wirednerd.springbatch.mongo.explore.MongodbJobExplorer;
 
 import static io.github.wirednerd.springbatch.mongo.MongodbRepositoryConstants.*;
 
 /**
  * <p>Primary class for enabling Mongodb for storing Spring Batch job execution data.</p>
- * <p>{@link MongoTemplate} and {@link MongoTransactionManager} instances are required.
+ * <p>{@link MongoTemplate} and {@link PlatformTransactionManager} instances are required.
  * And it is stronly recommended to {@link EnableTransactionManagement}</p>
  * <p>Example Configuration:</p>
  * <pre>
@@ -36,7 +36,7 @@ import static io.github.wirednerd.springbatch.mongo.MongodbRepositoryConstants.*
  *     }
  *
  *     &#64;Bean
- *     BatchConfigurer batchConfigurer(MongoTransactionManager mongoTransactionManager, MongoTemplate mongoTemplate) {
+ *     BatchConfigurer batchConfigurer(PlatformTransactionManager mongoTransactionManager, MongoTemplate mongoTemplate) {
  *         return MongodbBatchConfigurer.builder()
  *                 .mongoTemplate(mongoTemplate)
  *                 .mongoTransactionManager(mongoTransactionManager)
@@ -73,7 +73,7 @@ public class MongodbBatchConfigurer implements BatchConfigurer {
      */
     public MongodbBatchConfigurer(final MongoTemplate mongoTemplate,
                                   final String jobCollectionName, final String counterCollectionName,
-                                  final MongoTransactionManager transactionManager,
+                                  final PlatformTransactionManager transactionManager,
                                   @Nullable final TaskExecutor taskExecutor) {
 
         Assert.notNull(mongoTemplate, "A MongoTemplate is required");
@@ -167,7 +167,7 @@ public class MongodbBatchConfigurer implements BatchConfigurer {
         private MongoTemplate mongoTemplate;
         private String jobCollectionName = DEFAULT_JOB_COLLECTION;
         private String counterCollectionName = DEFAULT_COUNTER_COLLECTION;
-        private MongoTransactionManager mongoTransactionManager;
+        private PlatformTransactionManager mongoTransactionManager;
         private TaskExecutor taskExecutor;
 
         /**
@@ -209,7 +209,7 @@ public class MongodbBatchConfigurer implements BatchConfigurer {
          * @param mongoTransactionManager that can be used to manage transactions on the provided {@link MongoTemplate}
          * @return {@link Builder}
          */
-        public Builder mongoTransactionManager(final MongoTransactionManager mongoTransactionManager) {
+        public Builder mongoTransactionManager(final PlatformTransactionManager mongoTransactionManager) {
             this.mongoTransactionManager = mongoTransactionManager;
             return this;
         }
