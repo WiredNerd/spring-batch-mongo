@@ -1,5 +1,6 @@
-package io.github.wirednerd.mongo.config;
+package io.gihub.wirednerd.mongo;
 
+import io.github.wirednerd.springbatch.mongo.configuration.MongodbBatchConfigurer;
 import org.springframework.batch.core.configuration.annotation.BatchConfigurer;
 import org.springframework.batch.core.configuration.annotation.EnableBatchProcessing;
 import org.springframework.context.annotation.Bean;
@@ -9,10 +10,8 @@ import org.springframework.data.mongodb.MongoTransactionManager;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.transaction.annotation.EnableTransactionManagement;
-import io.github.wirednerd.springbatch.mongo.configuration.MongodbBatchConfigurer;
 
 @Configuration
-@EnableScheduling
 @EnableBatchProcessing
 @EnableTransactionManagement
 public class BatchConfiguration {

@@ -1,8 +1,8 @@
-name: Publish to OSSRH Package Registry
+name: Publish
 
 on:
   release:
-    types: [ created ]
+    types: [ created, workflow_dispatch ]
   workflow_dispatch:
 
 jobs:
@@ -18,7 +18,7 @@ jobs:
       - uses: gradle/gradle-build-action@v2
         with:
           gradle-version: 7.4
-          
+
       - run: |
           gradle publish -P=SIGNING_SIGNINGKEY="${{ secrets.SIGNING_SIGNINGKEY }}" \
             -P=SIGNING_PASSWORD="${{ secrets.SIGNING_PASSWORD }}" \

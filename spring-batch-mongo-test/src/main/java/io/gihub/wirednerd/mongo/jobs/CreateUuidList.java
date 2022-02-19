@@ -1,4 +1,4 @@
-package io.github.wirednerd.mongo.jobs;
+package io.gihub.wirednerd.mongo.jobs;
 
 import org.springframework.batch.core.Job;
 import org.springframework.batch.core.JobParameters;
@@ -10,17 +10,18 @@ import org.springframework.batch.core.configuration.annotation.StepBuilderFactor
 import org.springframework.batch.item.ItemProcessor;
 import org.springframework.batch.item.ItemReader;
 import org.springframework.batch.item.ItemWriter;
+import org.springframework.batch.item.support.ListItemWriter;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 import java.util.UUID;
 
 @Configuration
-public class ScheduledCreateDataJob {
+public class CreateUuidList {
 
     @Bean
-    public Job jobScheduledCreateData(JobBuilderFactory jobs, Step uuidStep) {
-        return jobs.get("ScheduledCreateData")
+    public Job createUuidListJob(JobBuilderFactory jobs, Step uuidStep) {
+        return jobs.get("CreateUuidList")
                 .start(uuidStep)
                 .build();
     }
@@ -29,12 +30,12 @@ public class ScheduledCreateDataJob {
     public Step uuidStep(StepBuilderFactory steps,
                          ItemReader<String> generateUuidValues,
                          ItemProcessor<String, String> processString,
-                         ItemWriter<Object> listItemWriter) {
+                         ItemWriter<Object> listUuidWriter) {
         return steps.get("UuidStep")
                 .<String, String>chunk(5)
                 .reader(generateUuidValues)
                 .processor(processString)
-                .writer(listItemWriter)
+                .writer(listUuidWriter)
                 .build();
     }
 
@@ -53,7 +54,7 @@ public class ScheduledCreateDataJob {
 
             @Override
             public String read() {
-                if (limit < 0) {
+                if (limit <= 0) {
                     return null;
                 }
                 limit--;
@@ -73,7 +74,7 @@ public class ScheduledCreateDataJob {
     }
 
     @Bean
-    public ItemWriter<Object> stoutItemWriter() {
-        return items -> items.forEach(System.out::println);
+    public ListItemWriter<Object> listUuidWriter() {
+        return new ListItemWriter<>();
     }
 }

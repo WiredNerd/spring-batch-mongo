@@ -1,0 +1,80 @@
+name: Test Pull Request
+
+on: [ pull_request, workflow_dispatch ]
+
+jobs:
+  mongo-springboot-version-test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        mongo: [ "4.0", "4.2", "4.4", "5.0" ]
+        springbootVersion: [ "2.5.9", "2.6.3" ]
+    steps:
+      - name: setup mongodb 1
+        run: docker run -d -p 27017:27017 --name mongoSvr mongo:${{ matrix.mongo }} mongod --replSet rs0 --port 27017
+      - name: setup mongodb 2
+        uses: nick-fields/retry@v2
+        with:
+          timeout_seconds: 10
+          max_attempts: 10
+          retry_wait_seconds: 2
+          warning_on_retry: false
+          command: docker exec -i mongoSvr mongo --eval "rs.initiate()"
+      - name: if failed, get mongo logs
+        run: docker logs mongoSvr
+        if: failure()
+
+      - uses: actions/checkout@v2
+      - uses: actions/setup-java@v2
+        with:
+          distribution: zulu
+          java-version: 11
+      - uses: gradle/gradle-build-action@v2
+        with:
+          gradle-version: 7.4
+
+      - run: gradle test -PspringbootVersion=${{ matrix.springbootVersion }}
+
+      - uses: actions/upload-artifact@v2
+        if: always()
+        with:
+          name: mongo-${{ matrix.mongo }}_spring-boot-${{ matrix.springbootVersion }}
+          path: |
+            build/reports
+            **/build/reports
+
+  pitest:
+    runs-on: ubuntu-latest
+    steps:
+      - name: setup mongodb 1
+        run: docker run -d -p 27017:27017 --name mongoSvr mongo:5.0 mongod --replSet rs0 --port 27017
+      - name: setup mongodb 2
+        uses: nick-fields/retry@v2
+        with:
+          timeout_seconds: 10
+          max_attempts: 10
+          retry_wait_seconds: 2
+          warning_on_retry: false
+          command: docker exec -i mongoSvr mongo --eval "rs.initiate()"
+      - name: if failed, get mongo logs
+        run: docker logs mongoSvr
+        if: failure()
+
+      - uses: actions/checkout@v2
+      - uses: actions/setup-java@v2
+        with:
+          distribution: zulu
+          java-version: 11
+
+      - uses: gradle/gradle-build-action@v2
+        with:
+          gradle-version: 7.4
+          arguments: pitest
+
+      - uses: actions/upload-artifact@v2
+        if: always()
+        with:
+          name: pitest
+          path: |
+            build/reports
+            **/build/reports

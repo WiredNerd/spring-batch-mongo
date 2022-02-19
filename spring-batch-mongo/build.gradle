@@ -23,11 +23,8 @@ dependencies {
     implementation 'org.netbeans.api:org-netbeans-api-annotations-common:RELEASE126'
 
     testImplementation 'org.junit.jupiter:junit-jupiter'
-    testImplementation 'org.springframework.boot:spring-boot-starter-test:2.6.3'
+    testImplementation "org.springframework.boot:spring-boot-starter-test:${springbootVersion}"
     testImplementation 'org.mongodb:mongodb-driver-sync:4.4.1'
-    testImplementation "org.testcontainers:testcontainers:1.16.3"
-    testImplementation "org.testcontainers:junit-jupiter:1.16.3"
-    testImplementation 'org.testcontainers:mongodb:1.16.3'
 }
 
 compileJava {
@@ -136,9 +133,9 @@ publishing {
                     }
                 }
                 scm {
-                    connection = 'scm:git:git://github.com/WiredNerd/steam-webapi-kt.git'
-                    developerConnection = 'scm:git:ssh://github.com/WiredNerd/steam-webapi-kt.git'
-                    url = 'https://github.com/WiredNerd/steam-webapi-kt'
+                    connection = 'scm:git@github.com:WiredNerd/spring-batch-mongo.git'
+                    developerConnection = 'scm:git@github.com:WiredNerd/spring-batch-mongo.git'
+                    url = 'https://github.com/WiredNerd/spring-batch-mongo'
                 }
             }
         }
