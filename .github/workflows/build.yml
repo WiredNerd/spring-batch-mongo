@@ -7,7 +7,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: setup mongodb 1
-        run: docker run -d -p 27017:27017 --name mongoSvr mongo:${{ matrix.mongo }} mongod --replSet rs0 --port 27017
+        run: docker run -d -p 27017:27017 --name mongoSvr mongo:5.0 mongod --replSet rs0 --port 27017
       - name: setup mongodb 2
         uses: nick-fields/retry@v2
         with:
