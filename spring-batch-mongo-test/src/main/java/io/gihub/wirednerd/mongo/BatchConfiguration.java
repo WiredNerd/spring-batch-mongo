@@ -9,6 +9,7 @@ import org.springframework.data.mongodb.MongoDatabaseFactory;
 import org.springframework.data.mongodb.MongoTransactionManager;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.scheduling.annotation.EnableScheduling;
+import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.annotation.EnableTransactionManagement;
 
 @Configuration
@@ -22,7 +23,7 @@ public class BatchConfiguration {
     }
 
     @Bean
-    BatchConfigurer batchConfigurer(MongoTransactionManager mongoTransactionManager, MongoTemplate mongoTemplate) {
+    BatchConfigurer batchConfigurer(PlatformTransactionManager mongoTransactionManager, MongoTemplate mongoTemplate) {
         return MongodbBatchConfigurer.builder()
                 .mongoTemplate(mongoTemplate)
                 .mongoTransactionManager(mongoTransactionManager)

@@ -30,7 +30,7 @@ public class BatchConfiguration {
     }
 
     @Bean
-    BatchConfigurer batchConfigurer(MongoTransactionManager mongoTransactionManager, MongoTemplate mongoTemplate) {
+    BatchConfigurer batchConfigurer(PlatformTransactionManager mongoTransactionManager, MongoTemplate mongoTemplate) {
         return MongodbBatchConfigurer.builder()
                 .mongoTemplate(mongoTemplate)
                 .mongoTransactionManager(mongoTransactionManager)
