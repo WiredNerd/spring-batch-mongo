@@ -5,6 +5,7 @@ import ch.qos.logback.classic.Logger;
 import ch.qos.logback.classic.spi.ILoggingEvent;
 import ch.qos.logback.core.read.ListAppender;
 import io.github.wirednerd.springbatch.mongo.MongoDBContainerConfig;
+import io.github.wirednerd.springbatch.mongo.converter.ExecutionContextConverter;
 import io.github.wirednerd.springbatch.mongo.converter.ExecutionContextConverterTest;
 import org.assertj.core.util.Lists;
 import org.bson.Document;
@@ -634,8 +635,10 @@ class MongodbJobRepositoryTest extends MongoDBContainerConfig {
         var updatedDoc = mongoTemplate.findOne(Query
                 .query(Criteria.where(JOB_EXECUTION_ID).is(jobExecution.getId())), Document.class, jobCollectionName);
 
-        assertEquals(1, updatedDoc.get(EXECUTION_CONTEXT, Document.class).size());
-        assertEquals("Updated Value", updatedDoc.get(EXECUTION_CONTEXT, Document.class).getString("Key"));
+        var executionContext = ExecutionContextConverter.deserializeContext(updatedDoc.getString(EXECUTION_CONTEXT));
+
+        assertEquals(1, executionContext.size());
+        assertEquals("Updated Value", executionContext.getString("Key"));
     }
 
     @Test
