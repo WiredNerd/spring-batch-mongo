@@ -2,4 +2,5 @@ rootProject.name = 'spring-batch'
 include 'spring-batch-mongo'
 include 'spring-batch-mongo-example'
 include 'spring-batch-mongo-test'
+include 'spring-batch-document'
 

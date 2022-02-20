@@ -5,9 +5,17 @@ import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
 import org.bson.Document;
 import org.springframework.batch.core.*;
+import org.springframework.batch.core.repository.dao.Jackson2ExecutionContextStringSerializer;
+import org.springframework.batch.item.ExecutionContext;
 import org.springframework.util.Assert;
+import org.springframework.util.StringUtils;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 /**
@@ -55,7 +63,7 @@ public class JobExecutionConverter {
         document.put(MongodbRepositoryConstants.LAST_UPDATED, source.getLastUpdated());
         document.put(MongodbRepositoryConstants.EXIT_CODE, source.getExitStatus().getExitCode());
         document.put(MongodbRepositoryConstants.EXIT_DESCRIPTION, source.getExitStatus().getExitDescription());
-        document.put(MongodbRepositoryConstants.EXECUTION_CONTEXT, ExecutionContextConverter.convert(source.getExecutionContext()));
+        document.put(MongodbRepositoryConstants.EXECUTION_CONTEXT, ExecutionContextConverter.serializeContext(source.getExecutionContext()));
         document.put(MongodbRepositoryConstants.JOB_CONFIGURATION_NAME, source.getJobConfigurationName());
 
         return document;
@@ -89,7 +97,7 @@ public class JobExecutionConverter {
         jobExecution.setEndTime(source.getDate(MongodbRepositoryConstants.END_TIME));
         jobExecution.setLastUpdated(source.getDate(MongodbRepositoryConstants.LAST_UPDATED));
         jobExecution.setExitStatus(new ExitStatus(source.getString(MongodbRepositoryConstants.EXIT_CODE), source.getString(MongodbRepositoryConstants.EXIT_DESCRIPTION)));
-        jobExecution.setExecutionContext(ExecutionContextConverter.convert(source.get(MongodbRepositoryConstants.EXECUTION_CONTEXT, Document.class)));
+        jobExecution.setExecutionContext(ExecutionContextConverter.deserializeContext(source.getString(MongodbRepositoryConstants.EXECUTION_CONTEXT)));
         return jobExecution;
     }
 }
