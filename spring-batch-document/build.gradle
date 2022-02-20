@@ -1,0 +1,160 @@
+plugins {
+    id 'java-library'
+    id "io.freefair.lombok" version "latest.release"
+//    id 'jacoco'
+    id 'pmd'
+    id 'project-report'
+    id 'info.solidsoft.pitest' version 'latest.release'
+    id 'signing'
+    id 'maven-publish'
+}
+
+apply plugin: 'java'
+//apply plugin: 'jacoco'
+apply plugin: 'build-dashboard'
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    implementation 'org.springframework.batch:spring-batch-core:latest.release'
+    implementation 'org.springframework.data:spring-data-mongodb:[3.2,)' // version 3.2 for compatibility with boot 2.5
+    
+    testImplementation "org.springframework.boot:spring-boot-starter-test:${springbootVersion}"
+    testImplementation 'org.junit.jupiter:junit-jupiter:latest.release'
+    testImplementation 'org.mongodb:mongodb-driver-sync:latest.release'
+}
+
+compileJava {
+    options.release = 11
+}
+
+java {
+    withSourcesJar()
+    withJavadocJar()
+}
+
+javadoc {
+    options.addBooleanOption('html5', true)
+    excludes = [
+    ]
+}
+
+test {
+    systemProperties = System.properties
+    useJUnitPlatform()
+//    finalizedBy jacocoTestReport
+}
+
+//jacocoTestReport {
+//    dependsOn test
+//}
+//
+//jacocoTestCoverageVerification {
+//    violationRules {
+//        rule {
+//            limit {
+//                counter = 'CLASS'
+//                value = 'COVEREDRATIO'
+//                minimum = 0.95
+//            }
+//            limit {
+//                counter = 'BRANCH'
+//                value = 'COVEREDRATIO'
+//                minimum = 0.85
+//            }
+//            limit {
+//                counter = 'LINE'
+//                value = 'COVEREDRATIO'
+//                minimum = 0.95
+//            }
+//            limit {
+//                counter = 'METHOD'
+//                value = 'COVEREDRATIO'
+//                minimum = 0.90
+//            }
+//            includes = [
+//                    'io.github.wirednerd.springbatch.document.*'
+//            ]
+//            excludes = [
+//            ]
+//        }
+//    }
+//}
+
+pmd {
+    ignoreFailures = true
+    consoleOutput = true
+    ruleSetFiles = files("custom-pmd-ruleset.xml")
+    ruleSets = []
+}
+pmdTest.enabled = false
+
+pitest {
+    targetClasses = ['io.github.wirednerd.springbatch.document.*']
+    threads = 8
+    outputFormats = ['XML', 'HTML']
+    timestampedReports = false
+    junit5PluginVersion = '0.15'
+}
+
+htmlDependencyReport {
+    projects = project.allprojects
+}
+
+// disables building plain.jar
+jar {
+    enabled = true
+    archiveClassifier = '' //use empty string
+}
+
+publishing {
+    publications {
+        mavenJava(MavenPublication) {
+            from components.java
+            pom {
+                name = "io.github.wirednerd:spring-batch-document"
+                description = 'Store Spring Batch Execution Data in Document Formats'
+                url = 'https://github.com/WiredNerd/spring-batch-mongo'
+                licenses {
+                    license {
+                        name = 'MIT License'
+                        url = 'http://www.opensource.org/licenses/mit-license.php'
+                    }
+                }
+                developers {
+                    developer {
+                        id = 'wirednerd'
+                        name = 'Peter Busch'
+                        organizationUrl = 'https://github.com/WiredNerd'
+                    }
+                }
+                scm {
+                    connection = 'scm:git@github.com:WiredNerd/spring-batch-mongo.git'
+                    developerConnection = 'scm:git@github.com:WiredNerd/spring-batch-mongo.git'
+                    url = 'https://github.com/WiredNerd/spring-batch-mongo'
+                }
+            }
+        }
+    }
+    repositories {
+        maven {
+            def releasesRepoUrl = uri("https://s01.oss.sonatype.org/service/local/staging/deploy/maven2/")
+            def snapshotsRepoUrl = uri("https://s01.oss.sonatype.org/content/repositories/snapshots/")
+            name = "OSSRH"
+            url = version.endsWith('SNAPSHOT') ? snapshotsRepoUrl : releasesRepoUrl
+            credentials {
+                username = findProperty("OSSRH_USERNAME")
+                password = findProperty("OSSRH_PASSWORD")
+            }
+        }
+    }
+}
+
+signing {
+    def signingKey = findProperty("SIGNING_SIGNINGKEY")
+    def signingPassword = findProperty("SIGNING_PASSWORD")
+    useInMemoryPgpKeys(signingKey, signingPassword)
+    sign publishing.publications.mavenJava
+}
