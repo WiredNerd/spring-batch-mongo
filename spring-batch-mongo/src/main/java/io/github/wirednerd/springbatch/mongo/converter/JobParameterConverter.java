@@ -19,7 +19,7 @@ public class JobParameterConverter {
      * Convert the source object of type {@link Document} to target type {@link JobParameter}.
      *
      * @param document the source object to convert, which must be an instance of {@link Document} (never {@code null})
-     * @return the converted object, which must be an instance of {@link JobParameter} (potentially {@code null})
+     * @return the converted object, which must be an instance of {@link JobParameter} (never {@code null})
      * @throws IllegalArgumentException if the source cannot be converted to the desired target type
      */
     public static JobParameter convert(final Document document) {
