@@ -45,7 +45,7 @@ public class StepExecutionConverter {
         document.put(MongodbRepositoryConstants.START_TIME, source.getStartTime());
         document.put(MongodbRepositoryConstants.END_TIME, source.getEndTime());
         document.put(MongodbRepositoryConstants.LAST_UPDATED, source.getLastUpdated());
-        document.put(MongodbRepositoryConstants.EXECUTION_CONTEXT, ExecutionContextConverter.convert(source.getExecutionContext()));
+        document.put(MongodbRepositoryConstants.EXECUTION_CONTEXT, ExecutionContextConverter.serializeContext(source.getExecutionContext()));
         document.put(MongodbRepositoryConstants.EXIT_CODE, source.getExitStatus().getExitCode());
         document.put(MongodbRepositoryConstants.EXIT_DESCRIPTION, source.getExitStatus().getExitDescription());
         document.put(MongodbRepositoryConstants.FILTER_COUNT, source.getFilterCount());
@@ -81,7 +81,7 @@ public class StepExecutionConverter {
         stepExecution.setStartTime(source.getDate(MongodbRepositoryConstants.START_TIME));
         stepExecution.setEndTime(source.getDate(MongodbRepositoryConstants.END_TIME));
         stepExecution.setLastUpdated(source.getDate(MongodbRepositoryConstants.LAST_UPDATED));
-        stepExecution.setExecutionContext(ExecutionContextConverter.convert(source.get(MongodbRepositoryConstants.EXECUTION_CONTEXT, Document.class)));
+        stepExecution.setExecutionContext(ExecutionContextConverter.deserializeContext(source.getString(MongodbRepositoryConstants.EXECUTION_CONTEXT)));
         stepExecution.setExitStatus(new ExitStatus(source.getString(MongodbRepositoryConstants.EXIT_CODE), source.getString(MongodbRepositoryConstants.EXIT_DESCRIPTION)));
         stepExecution.setFilterCount(source.getInteger(MongodbRepositoryConstants.FILTER_COUNT, 0));
         return stepExecution;

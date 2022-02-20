@@ -9,6 +9,7 @@ import org.springframework.data.mongodb.core.query.Query;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+@SuppressWarnings("Depreciated")
 public class ExecutionContextConverterTest extends MongoDBContainerConfig {
 
     @Test
