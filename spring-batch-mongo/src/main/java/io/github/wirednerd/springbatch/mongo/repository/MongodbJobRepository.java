@@ -453,7 +453,7 @@ public class MongodbJobRepository implements JobRepository {
         var updateResult = mongoTemplate.updateFirst(
                 Query.query(Criteria.where(JOB_EXECUTION_ID).is(jobExecution.getId())),
                 Update.update(EXECUTION_CONTEXT,
-                        ExecutionContextConverter.convert(jobExecution.getExecutionContext())),
+                        ExecutionContextConverter.serializeContext(jobExecution.getExecutionContext())),
                 jobCollectionName);
 
         Assert.state(updateResult.getMatchedCount() == 1,
@@ -602,7 +602,7 @@ public class MongodbJobRepository implements JobRepository {
         Assert.notNull(stepExecution.getId(), "StepExecution must already be saved (have an id assigned)");
 
         synchronized (stepExecution.getJobExecution()) {
-            var executionContextDoc = ExecutionContextConverter.convert(stepExecution.getExecutionContext());
+            var executionContextDoc = ExecutionContextConverter.serializeContext(stepExecution.getExecutionContext());
 
             mongoTemplate.updateFirst(new Query()
                             .addCriteria(Criteria.where(JOB_EXECUTION_ID).is(stepExecution.getJobExecutionId())),
