@@ -1,5 +1,6 @@
 package io.github.wirednerd.springbatch.mongo.explore;
 
+import io.github.wirednerd.springbatch.document.JobExecutionDocumentMapper;
 import io.github.wirednerd.springbatch.mongo.MongoDBContainerConfig;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -9,7 +10,6 @@ import org.springframework.batch.core.JobParameter;
 import org.springframework.batch.core.JobParameters;
 import org.springframework.batch.core.launch.NoSuchJobException;
 import org.springframework.data.mongodb.core.query.Query;
-import io.github.wirednerd.springbatch.mongo.converter.JobExecutionConverter;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -27,6 +27,8 @@ class MongodbJobExplorerTest extends MongoDBContainerConfig {
     private JobExecution jobExecution21, jobExecution22;
 
     private List<String> jobNamesSorted;
+
+    private final JobExecutionDocumentMapper jobExecutionDocumentMapper = new JobExecutionDocumentMapper();
 
     @BeforeEach
     void setUp() throws Exception {
@@ -49,16 +51,16 @@ class MongodbJobExplorerTest extends MongoDBContainerConfig {
         jobExecution13.createStepExecution("Step2").setId(2L);
         jobExecution13.createStepExecution("Step3").setId(3L);
 
-        mongoTemplate.insert(JobExecutionConverter.convert(jobExecution11), jobCollectionName);
-        mongoTemplate.insert(JobExecutionConverter.convert(jobExecution12), jobCollectionName);
-        mongoTemplate.insert(JobExecutionConverter.convert(jobExecution13), jobCollectionName);
+        mongoTemplate.insert(jobExecutionDocumentMapper.toJobExecutionDocument(jobExecution11), jobCollectionName);
+        mongoTemplate.insert(jobExecutionDocumentMapper.toJobExecutionDocument(jobExecution12), jobCollectionName);
+        mongoTemplate.insert(jobExecutionDocumentMapper.toJobExecutionDocument(jobExecution13), jobCollectionName);
         jobNames.add("Job1");
 
         jobExecution21 = new JobExecution(new JobInstance(20L, "Job2"), 21L, new JobParameters(), "");
         jobExecution22 = new JobExecution(new JobInstance(20L, "Job2"), 22L, new JobParameters(), "");
 
-        mongoTemplate.insert(JobExecutionConverter.convert(jobExecution21), jobCollectionName);
-        mongoTemplate.insert(JobExecutionConverter.convert(jobExecution22), jobCollectionName);
+        mongoTemplate.insert(jobExecutionDocumentMapper.toJobExecutionDocument(jobExecution21), jobCollectionName);
+        mongoTemplate.insert(jobExecutionDocumentMapper.toJobExecutionDocument(jobExecution22), jobCollectionName);
         jobNames.add("Job2");
 
         jobNamesSorted = new ArrayList<>();

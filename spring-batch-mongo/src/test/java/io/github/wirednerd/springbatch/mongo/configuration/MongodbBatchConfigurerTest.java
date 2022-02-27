@@ -1,17 +1,17 @@
 package io.github.wirednerd.springbatch.mongo.configuration;
 
 import io.github.wirednerd.springbatch.mongo.MongoDBContainerConfig;
+import io.github.wirednerd.springbatch.mongo.explore.MongodbJobExplorer;
+import io.github.wirednerd.springbatch.mongo.repository.MongodbJobRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.batch.core.launch.support.SimpleJobLauncher;
 import org.springframework.core.task.SyncTaskExecutor;
 import org.springframework.data.mongodb.MongoTransactionManager;
 import org.springframework.test.util.ReflectionTestUtils;
-import io.github.wirednerd.springbatch.mongo.explore.MongodbJobExplorer;
-import io.github.wirednerd.springbatch.mongo.repository.MongodbJobRepository;
 
+import static io.github.wirednerd.springbatch.document.JobExecutionDocumentMapper.*;
 import static org.junit.jupiter.api.Assertions.*;
-import static io.github.wirednerd.springbatch.mongo.MongodbRepositoryConstants.*;
 
 class MongodbBatchConfigurerTest extends MongoDBContainerConfig {
 

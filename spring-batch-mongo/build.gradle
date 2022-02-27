@@ -1,25 +1,24 @@
 plugins {
     id 'java-library'
-    id "io.freefair.lombok" version "6.+"
-//    id 'jacoco'
+    id "io.freefair.lombok" version "latest.release"
     id 'pmd'
-    id 'project-report'
-    id 'info.solidsoft.pitest' version '1.+'
+    id 'info.solidsoft.pitest' version "latest.release"
     id 'signing'
     id 'maven-publish'
 }
 
-apply plugin: 'java'
-//apply plugin: 'jacoco'
-apply plugin: 'build-dashboard'
+apply plugin: 'java-library'
 
 repositories {
     mavenCentral()
 }
 
 dependencies {
+    api project(":spring-batch-document")
     implementation 'org.springframework.batch:spring-batch-core:latest.release'
     implementation 'org.springframework.data:spring-data-mongodb:[3.2,)'  // version 3.2 for compatibility with boot 2.5
+
+    // Fix warning: unknown enum constant javax.annotation.meta.When.MAYBE
     implementation 'org.netbeans.api:org-netbeans-api-annotations-common:latest.release'
 
     testImplementation 'org.junit.jupiter:junit-jupiter'
@@ -46,44 +45,7 @@ javadoc {
 test {
     systemProperties = System.properties
     useJUnitPlatform()
-//    finalizedBy jacocoTestReport
 }
-
-//jacocoTestReport {
-//    dependsOn test
-//}
-//
-//jacocoTestCoverageVerification {
-//    violationRules {
-//        rule {
-//            limit {
-//                counter = 'CLASS'
-//                value = 'COVEREDRATIO'
-//                minimum = 0.95
-//            }
-//            limit {
-//                counter = 'BRANCH'
-//                value = 'COVEREDRATIO'
-//                minimum = 0.85
-//            }
-//            limit {
-//                counter = 'LINE'
-//                value = 'COVEREDRATIO'
-//                minimum = 0.95
-//            }
-//            limit {
-//                counter = 'METHOD'
-//                value = 'COVEREDRATIO'
-//                minimum = 0.90
-//            }
-//            includes = [
-//                    'io.github.wirednerd.springbatch.mongo.*'
-//            ]
-//            excludes = [
-//            ]
-//        }
-//    }
-//}
 
 pmd {
     ignoreFailures = true
@@ -99,10 +61,6 @@ pitest {
     outputFormats = ['XML', 'HTML']
     timestampedReports = false
     junit5PluginVersion = '0.15'
-}
-
-htmlDependencyReport {
-    projects = project.allprojects
 }
 
 // disables building plain.jar

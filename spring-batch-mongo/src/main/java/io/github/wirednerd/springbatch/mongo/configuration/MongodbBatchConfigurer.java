@@ -18,7 +18,9 @@ import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.annotation.EnableTransactionManagement;
 import org.springframework.util.Assert;
 
-import static io.github.wirednerd.springbatch.mongo.MongodbRepositoryConstants.*;
+import static io.github.wirednerd.springbatch.document.JobExecutionDocumentMapper.*;
+import static io.github.wirednerd.springbatch.mongo.MongodbRepositoryConstants.DEFAULT_COUNTER_COLLECTION;
+import static io.github.wirednerd.springbatch.mongo.MongodbRepositoryConstants.DEFAULT_JOB_COLLECTION;
 
 /**
  * <p>Primary class for enabling Mongodb for storing Spring Batch job execution data.</p>

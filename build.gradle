@@ -1,20 +1,8 @@
 plugins {
-    id 'java'
 }
 
-apply plugin: 'java'
+apply plugin: 'build-dashboard'
 
 repositories {
     mavenCentral()
 }
-
-dependencies {
-
-}
-
-
-test {
-    systemProperties = System.properties
-    useJUnitPlatform()
-}
-

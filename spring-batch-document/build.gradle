@@ -1,17 +1,13 @@
 plugins {
     id 'java-library'
     id "io.freefair.lombok" version "latest.release"
-//    id 'jacoco'
     id 'pmd'
-    id 'project-report'
-    id 'info.solidsoft.pitest' version 'latest.release'
+    id 'info.solidsoft.pitest' version "latest.release"
     id 'signing'
     id 'maven-publish'
 }
 
-apply plugin: 'java'
-//apply plugin: 'jacoco'
-apply plugin: 'build-dashboard'
+apply plugin: 'java-library'
 
 repositories {
     mavenCentral()
@@ -20,7 +16,7 @@ repositories {
 dependencies {
     implementation 'org.springframework.batch:spring-batch-core:latest.release'
     implementation 'org.springframework.data:spring-data-mongodb:[3.2,)' // version 3.2 for compatibility with boot 2.5
-    
+
     testImplementation "org.springframework.boot:spring-boot-starter-test:${springbootVersion}"
     testImplementation 'org.junit.jupiter:junit-jupiter:latest.release'
     testImplementation 'org.mongodb:mongodb-driver-sync:latest.release'
@@ -44,44 +40,7 @@ javadoc {
 test {
     systemProperties = System.properties
     useJUnitPlatform()
-//    finalizedBy jacocoTestReport
 }
-
-//jacocoTestReport {
-//    dependsOn test
-//}
-//
-//jacocoTestCoverageVerification {
-//    violationRules {
-//        rule {
-//            limit {
-//                counter = 'CLASS'
-//                value = 'COVEREDRATIO'
-//                minimum = 0.95
-//            }
-//            limit {
-//                counter = 'BRANCH'
-//                value = 'COVEREDRATIO'
-//                minimum = 0.85
-//            }
-//            limit {
-//                counter = 'LINE'
-//                value = 'COVEREDRATIO'
-//                minimum = 0.95
-//            }
-//            limit {
-//                counter = 'METHOD'
-//                value = 'COVEREDRATIO'
-//                minimum = 0.90
-//            }
-//            includes = [
-//                    'io.github.wirednerd.springbatch.document.*'
-//            ]
-//            excludes = [
-//            ]
-//        }
-//    }
-//}
 
 pmd {
     ignoreFailures = true
@@ -93,14 +52,11 @@ pmdTest.enabled = false
 
 pitest {
     targetClasses = ['io.github.wirednerd.springbatch.document.*']
-    threads = 8
-    outputFormats = ['XML', 'HTML']
+    outputFormats = ["XML", "HTML"]
+    exportLineCoverage = true
     timestampedReports = false
+    threads = 8
     junit5PluginVersion = '0.15'
-}
-
-htmlDependencyReport {
-    projects = project.allprojects
 }
 
 // disables building plain.jar

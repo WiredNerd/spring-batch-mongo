@@ -4,9 +4,9 @@ import ch.qos.logback.classic.Level;
 import ch.qos.logback.classic.Logger;
 import ch.qos.logback.classic.spi.ILoggingEvent;
 import ch.qos.logback.core.read.ListAppender;
+import io.github.wirednerd.springbatch.document.JobExecutionDocument;
+import io.github.wirednerd.springbatch.document.JobExecutionDocumentMapper;
 import io.github.wirednerd.springbatch.mongo.MongoDBContainerConfig;
-import io.github.wirednerd.springbatch.mongo.converter.ExecutionContextConverter;
-import io.github.wirednerd.springbatch.mongo.converter.ExecutionContextConverterTest;
 import org.assertj.core.util.Lists;
 import org.bson.Document;
 import org.junit.jupiter.api.AfterEach;
@@ -22,16 +22,14 @@ import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.data.mongodb.core.query.Update;
 import org.springframework.test.util.ReflectionTestUtils;
-import io.github.wirednerd.springbatch.mongo.converter.JobExecutionConverter;
-import io.github.wirednerd.springbatch.mongo.converter.JobExecutionConverterTest;
 
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.util.Date;
 import java.util.LinkedHashMap;
 
+import static io.github.wirednerd.springbatch.document.JobExecutionDocumentMapper.*;
 import static org.junit.jupiter.api.Assertions.*;
-import static io.github.wirednerd.springbatch.mongo.MongodbRepositoryConstants.*;
 
 class MongodbJobRepositoryTest extends MongoDBContainerConfig {
 
@@ -44,8 +42,10 @@ class MongodbJobRepositoryTest extends MongoDBContainerConfig {
 
     private static final JobKeyGenerator<JobParameters> jobKeyGenerator = new DefaultJobKeyGenerator();
 
-    private Logger logger = (Logger) org.slf4j.LoggerFactory.getLogger(MongodbJobRepository.class);
+    private final Logger logger = (Logger) org.slf4j.LoggerFactory.getLogger(MongodbJobRepository.class);
     private ListAppender<ILoggingEvent> appender;
+
+    private final JobExecutionDocumentMapper jobExecutionDocumentMapper = new JobExecutionDocumentMapper();
 
     @BeforeEach
     void loggerSetup() {
@@ -63,14 +63,69 @@ class MongodbJobRepositoryTest extends MongoDBContainerConfig {
     @BeforeEach
     void setUp() {
         repository = new MongodbJobRepository(mongoTemplate, jobCollectionName, counterCollectionName);
-        jobExecution = JobExecutionConverterTest.buildJobExecution();
+        jobExecution = buildJobExecution();
         jobExecution.setId(0L);
         jobExecution.getJobInstance().setId(0L);
         jobExecution.getStepExecutions().forEach(step -> step.setId(0L));
 
         jobExecution.setStatus(BatchStatus.COMPLETED);
 
-        mongoTemplate.insert(JobExecutionConverter.convert(jobExecution), jobCollectionName);
+        mongoTemplate.insert(jobExecutionDocumentMapper.toJobExecutionDocument(jobExecution), jobCollectionName);
+    }
+
+    private JobExecution buildJobExecution() {
+        var paramMap = new LinkedHashMap<String, JobParameter>();
+        paramMap.put("Test String Key", new JobParameter("Test Value"));
+        paramMap.put("Test Long Key", new JobParameter(123L, false));
+
+        var jobParameters = new JobParameters(paramMap);
+
+        var jobInstance = new JobInstance(1L, "Example Job");
+
+        var jobExecution = new JobExecution(jobInstance, 2L, jobParameters, "Job Configuration String");
+
+        var step1 = buildStepExecution(jobExecution);
+        jobExecution.addStepExecutions(Lists.newArrayList(step1));
+
+        jobExecution.setVersion(5);
+        jobExecution.setStatus(BatchStatus.STARTED);
+        jobExecution.setStartTime(Date.from(OffsetDateTime.now().minusHours(3).toInstant()));
+        jobExecution.setCreateTime(Date.from(OffsetDateTime.now().minusHours(2).toInstant()));
+        jobExecution.setEndTime(Date.from(OffsetDateTime.now().minusHours(1).toInstant()));
+        jobExecution.setLastUpdated(Date.from(OffsetDateTime.now().toInstant()));
+        jobExecution.setExitStatus(ExitStatus.EXECUTING);
+        jobExecution.getExitStatus().addExitDescription("Test Exit Description");
+
+        jobExecution.getExecutionContext().putString("String", "String Value");
+        jobExecution.getExecutionContext().putLong("Long", 789L);
+
+        jobExecution.addFailureException(new RuntimeException("Test Exception"));
+
+        return jobExecution;
+    }
+
+    private StepExecution buildStepExecution(JobExecution jobExecution) {
+        var stepExecution = new StepExecution("Example Step", jobExecution, 3L);
+
+        stepExecution.setReadCount(1);
+        stepExecution.setWriteCount(2);
+        stepExecution.setCommitCount(3);
+        stepExecution.setRollbackCount(4);
+        stepExecution.setReadSkipCount(5);
+        stepExecution.setProcessSkipCount(6);
+        stepExecution.setWriteSkipCount(7);
+        stepExecution.setStartTime(Date.from(OffsetDateTime.now().minusHours(2).toInstant()));
+        stepExecution.setEndTime(Date.from(OffsetDateTime.now().minusHours(1).toInstant()));
+        stepExecution.setLastUpdated(Date.from(OffsetDateTime.now().toInstant()));
+
+        stepExecution.getExecutionContext().putString("String", "String Value");
+        stepExecution.getExecutionContext().putLong("Long", 789L);
+        stepExecution.setExitStatus(ExitStatus.EXECUTING);
+        stepExecution.getExitStatus().addExitDescription("Test Exit Description");
+        stepExecution.setFilterCount(8);
+        stepExecution.addFailureException(new RuntimeException("Test Exception"));
+
+        return stepExecution;
     }
 
     @Test
@@ -134,11 +189,11 @@ class MongodbJobRepositoryTest extends MongoDBContainerConfig {
         assertEquals(1L, jobInstance.getInstanceId());
         assertEquals("New Job", jobInstance.getJobName());
 
-        var documents = mongoTemplate.find(new Query(Criteria.where("jobInstanceId").is(1L)), Document.class, jobCollectionName);
+        var documents = mongoTemplate.find(new Query(Criteria.where("jobInstanceId").is(1L)), JobExecutionDocument.class, jobCollectionName);
         assertEquals(1, documents.size());
-        assertEquals(jobKeyGenerator.generateKey(jobExecution.getJobParameters()), documents.get(0).getString("jobKey"));
+        assertEquals(jobKeyGenerator.generateKey(jobExecution.getJobParameters()), documents.get(0).getJobKey());
 
-        var jobExecution = JobExecutionConverter.convert(documents.get(0));
+        var jobExecution = jobExecutionDocumentMapper.toJobExecution(documents.get(0));
         assertEquals(1L, jobExecution.getJobInstance().getId());
         assertEquals("New Job", jobExecution.getJobInstance().getJobName());
     }
@@ -244,7 +299,7 @@ class MongodbJobRepositoryTest extends MongoDBContainerConfig {
         assertEquals(1L, jobExecution.getJobId());
         assertNull(jobExecution.getJobConfigurationName());
         assertNotNull(jobExecution.getLastUpdated());
-        assertEquals(1l, jobExecution.getId());
+        assertEquals(1L, jobExecution.getId());
         assertEquals(0, jobExecution.getVersion());
         assertEquals(0, jobExecution.getExecutionContext().size());
 
@@ -269,7 +324,7 @@ class MongodbJobRepositoryTest extends MongoDBContainerConfig {
 
     @Test
     void createJobExecution_newExecutionForCompletedJob_UpdatedParameters() throws Exception {
-        var paramMap = new LinkedHashMap<String, JobParameter>(jobExecution.getJobParameters().getParameters());
+        var paramMap = new LinkedHashMap<>(jobExecution.getJobParameters().getParameters());
         paramMap.put("Test String Key", new JobParameter("Changed Value"));
         var newJobExecution = repository.createJobExecution(jobExecution.getJobInstance().getJobName(), new JobParameters(paramMap));
 
@@ -278,7 +333,7 @@ class MongodbJobRepositoryTest extends MongoDBContainerConfig {
         assertEquals(1L, newJobExecution.getJobId());
         assertNull(newJobExecution.getJobConfigurationName());
         assertNotNull(newJobExecution.getLastUpdated());
-        assertEquals(1l, newJobExecution.getId());
+        assertEquals(1L, newJobExecution.getId());
         assertEquals(0, newJobExecution.getVersion());
         assertEquals(0, newJobExecution.getExecutionContext().size());
 
@@ -298,12 +353,12 @@ class MongodbJobRepositoryTest extends MongoDBContainerConfig {
         jobExecution.getExecutionContext().putString("String", "String Value");
         jobExecution.getExecutionContext().putLong("Long", 789L);
 
-        mongoTemplate.insert(JobExecutionConverter.convert(jobExecution), jobCollectionName);
+        mongoTemplate.insert(jobExecutionDocumentMapper.toJobExecutionDocument(jobExecution), jobCollectionName);
 
         jobExecution.setId(repository.getJobExecutionCounter().nextValue());
         jobExecution.getExecutionContext().putString("String2", "value2");
 
-        mongoTemplate.insert(JobExecutionConverter.convert(jobExecution), jobCollectionName);
+        mongoTemplate.insert(jobExecutionDocumentMapper.toJobExecutionDocument(jobExecution), jobCollectionName);
 
         var newJobExecution = repository.createJobExecution(jobInstance.getJobName(), jobParameters);
 
@@ -333,12 +388,12 @@ class MongodbJobRepositoryTest extends MongoDBContainerConfig {
         jobExecution.getExecutionContext().putString("String", "String Value");
         jobExecution.getExecutionContext().putLong("Long", 789L);
 
-        mongoTemplate.insert(JobExecutionConverter.convert(jobExecution), jobCollectionName);
+        mongoTemplate.insert(jobExecutionDocumentMapper.toJobExecutionDocument(jobExecution), jobCollectionName);
 
         jobExecution.setId(repository.getJobExecutionCounter().nextValue());
         jobExecution.getExecutionContext().putString("String2", "value2");
 
-        mongoTemplate.insert(JobExecutionConverter.convert(jobExecution), jobCollectionName);
+        mongoTemplate.insert(jobExecutionDocumentMapper.toJobExecutionDocument(jobExecution), jobCollectionName);
 
         var newJobExecution = repository.createJobExecution(jobInstance.getJobName(), jobParameters);
 
@@ -388,7 +443,7 @@ class MongodbJobRepositoryTest extends MongoDBContainerConfig {
         jobExecution.setStartTime(new Date(System.currentTimeMillis()));
         jobExecution.setEndTime(null);
 
-        mongoTemplate.insert(JobExecutionConverter.convert(jobExecution), jobCollectionName);
+        mongoTemplate.insert(jobExecutionDocumentMapper.toJobExecutionDocument(jobExecution), jobCollectionName);
 
         try {
             repository.createJobExecution(jobInstance.getJobName(), jobParameters);
@@ -409,7 +464,7 @@ class MongodbJobRepositoryTest extends MongoDBContainerConfig {
         jobExecution.setStartTime(new Date(System.currentTimeMillis()));
         jobExecution.setEndTime(new Date(System.currentTimeMillis()));
 
-        mongoTemplate.insert(JobExecutionConverter.convert(jobExecution), jobCollectionName);
+        mongoTemplate.insert(jobExecutionDocumentMapper.toJobExecutionDocument(jobExecution), jobCollectionName);
 
         try {
             repository.createJobExecution(jobInstance.getJobName(), jobParameters);
@@ -430,7 +485,7 @@ class MongodbJobRepositoryTest extends MongoDBContainerConfig {
         jobExecution.setStartTime(new Date(System.currentTimeMillis()));
         jobExecution.setEndTime(new Date(System.currentTimeMillis()));
 
-        mongoTemplate.insert(JobExecutionConverter.convert(jobExecution), jobCollectionName);
+        mongoTemplate.insert(jobExecutionDocumentMapper.toJobExecutionDocument(jobExecution), jobCollectionName);
 
         try {
             repository.createJobExecution(jobInstance.getJobName(), jobParameters);
@@ -454,7 +509,7 @@ class MongodbJobRepositoryTest extends MongoDBContainerConfig {
         jobExecution.setStartTime(new Date(System.currentTimeMillis()));
         jobExecution.setEndTime(new Date(System.currentTimeMillis()));
 
-        mongoTemplate.insert(JobExecutionConverter.convert(jobExecution), jobCollectionName);
+        mongoTemplate.insert(jobExecutionDocumentMapper.toJobExecutionDocument(jobExecution), jobCollectionName);
 
         try {
             repository.createJobExecution(jobInstance.getJobName(), jobParameters);
@@ -477,7 +532,7 @@ class MongodbJobRepositoryTest extends MongoDBContainerConfig {
         jobExecution.setStartTime(new Date(System.currentTimeMillis()));
         jobExecution.setEndTime(new Date(System.currentTimeMillis()));
 
-        mongoTemplate.insert(JobExecutionConverter.convert(jobExecution), jobCollectionName);
+        mongoTemplate.insert(jobExecutionDocumentMapper.toJobExecutionDocument(jobExecution), jobCollectionName);
 
         try {
             repository.createJobExecution(jobInstance.getJobName(), jobParameters);
@@ -502,7 +557,7 @@ class MongodbJobRepositoryTest extends MongoDBContainerConfig {
 
         assertEquals(BatchStatus.STARTED, jobExecution.getStatus());
         assertTrue(beforeLastUpdated.before(jobExecution.getLastUpdated()),
-                beforeLastUpdated.toString() + " " + jobExecution.getLastUpdated().toString());
+                beforeLastUpdated + " " + jobExecution.getLastUpdated());
 
         var updatedDoc = mongoTemplate.findOne(Query
                 .query(Criteria.where(JOB_EXECUTION_ID).is(jobExecution.getId())), Document.class, jobCollectionName);
@@ -529,7 +584,7 @@ class MongodbJobRepositoryTest extends MongoDBContainerConfig {
         assertEquals(BatchStatus.COMPLETED, jobExecution.getStatus());
         assertEquals(beforeVersion + 2, jobExecution.getVersion());
         assertTrue(beforeLastUpdated.before(jobExecution.getLastUpdated()),
-                beforeLastUpdated.toString() + " " + jobExecution.getLastUpdated().toString());
+                beforeLastUpdated + " " + jobExecution.getLastUpdated());
 
         var updatedDoc = mongoTemplate.findOne(Query
                 .query(Criteria.where(JOB_EXECUTION_ID).is(jobExecution.getId())), Document.class, jobCollectionName);
@@ -587,10 +642,10 @@ class MongodbJobRepositoryTest extends MongoDBContainerConfig {
     void updateJobExecution() {
         Integer currentVersion = jobExecution.getVersion();
 
-        jobExecution.setCreateTime(Date.from(OffsetDateTime.of(2022, 02, 1, 1, 3, 4, 0, ZoneOffset.UTC).toInstant()));
-        jobExecution.setStartTime(Date.from(OffsetDateTime.of(2022, 02, 1, 2, 3, 4, 0, ZoneOffset.UTC).toInstant()));
-        jobExecution.setEndTime(Date.from(OffsetDateTime.of(2022, 02, 1, 3, 3, 4, 0, ZoneOffset.UTC).toInstant()));
-        jobExecution.setLastUpdated(Date.from(OffsetDateTime.of(2022, 02, 1, 4, 3, 4, 0, ZoneOffset.UTC).toInstant()));
+        jobExecution.setCreateTime(Date.from(OffsetDateTime.of(2022, 2, 1, 1, 3, 4, 0, ZoneOffset.UTC).toInstant()));
+        jobExecution.setStartTime(Date.from(OffsetDateTime.of(2022, 2, 1, 2, 3, 4, 0, ZoneOffset.UTC).toInstant()));
+        jobExecution.setEndTime(Date.from(OffsetDateTime.of(2022, 2, 1, 3, 3, 4, 0, ZoneOffset.UTC).toInstant()));
+        jobExecution.setLastUpdated(Date.from(OffsetDateTime.of(2022, 2, 1, 4, 3, 4, 0, ZoneOffset.UTC).toInstant()));
         jobExecution.setStatus(BatchStatus.FAILED);
         jobExecution.setExitStatus(new ExitStatus("FAILED", "updateJobExecution"));
 
@@ -635,7 +690,7 @@ class MongodbJobRepositoryTest extends MongoDBContainerConfig {
         var updatedDoc = mongoTemplate.findOne(Query
                 .query(Criteria.where(JOB_EXECUTION_ID).is(jobExecution.getId())), Document.class, jobCollectionName);
 
-        var executionContext = ExecutionContextConverter.deserializeContext(updatedDoc.getString(EXECUTION_CONTEXT));
+        var executionContext = jobExecutionDocumentMapper.deserializeContext(updatedDoc.getString(EXECUTION_CONTEXT));
 
         assertEquals(1, executionContext.size());
         assertEquals("Updated Value", executionContext.getString("Key"));
@@ -648,11 +703,22 @@ class MongodbJobRepositoryTest extends MongoDBContainerConfig {
         repository.updateExecutionContext(jobExecution);
 
         var updatedDoc = mongoTemplate.findOne(Query
-                .query(Criteria.where(JOB_EXECUTION_ID).is(jobExecution.getId())), Document.class, jobCollectionName);
+                .query(Criteria.where(JOB_EXECUTION_ID).is(jobExecution.getId())), JobExecutionDocument.class, jobCollectionName);
 
-        var updatedJobExecution = JobExecutionConverter.convert(updatedDoc);
+        var updatedJobExecution = jobExecutionDocumentMapper.toJobExecution(updatedDoc);
 
-        ExecutionContextConverterTest.compare(expected, updatedJobExecution.getExecutionContext());
+        compare(expected, updatedJobExecution.getExecutionContext());
+    }
+
+    private void compare(ExecutionContext expected, ExecutionContext actual) {
+        if (expected == null) {
+            assertTrue(actual == null || actual.entrySet().size() == 0);
+            return;
+        }
+        for (var entry : expected.entrySet()) {
+            assertTrue(actual.containsKey(entry.getKey()));
+            assertEquals(entry.getValue(), actual.get(entry.getKey()));
+        }
     }
 
     @Test
@@ -693,7 +759,6 @@ class MongodbJobRepositoryTest extends MongoDBContainerConfig {
         var jobName = "New Job";
         var jobParameters = new JobParameters();
 
-        var jobInstance = new JobInstance(repository.getJobInstanceCounter().nextValue(), jobName);
         var newJobExecution1 = repository.createJobExecution(jobName, jobParameters);
         var newJobExecution2 = repository.createJobExecution(jobName, jobParameters);
         var foundExecution = repository.getLastJobExecution(jobName, jobParameters);
@@ -704,7 +769,7 @@ class MongodbJobRepositoryTest extends MongoDBContainerConfig {
     }
 
     @Test
-    void getLastJobExecution_notFound() throws Exception {
+    void getLastJobExecution_notFound() {
         var jobName = "New Job";
         var jobParameters = new JobParameters();
 
@@ -714,7 +779,7 @@ class MongodbJobRepositoryTest extends MongoDBContainerConfig {
     }
 
     @Test
-    void getLastJobExecution_jobInstance() throws Exception {
+    void getLastJobExecution_jobInstance() {
         var jobName = "New Job";
         var jobParameters = new JobParameters();
 
@@ -756,9 +821,9 @@ class MongodbJobRepositoryTest extends MongoDBContainerConfig {
 
         var jobExecutionDoc = mongoTemplate.findOne(Query.query(Criteria
                         .where(JOB_EXECUTION_ID).is(step2.getJobExecutionId())),
-                Document.class, jobCollectionName);
+                JobExecutionDocument.class, jobCollectionName);
 
-        jobExecution = JobExecutionConverter.convert(jobExecutionDoc);
+        jobExecution = jobExecutionDocumentMapper.toJobExecution(jobExecutionDoc);
 
         assertEquals(2, jobExecution.getStepExecutions().size());
         var actualStep2 = (StepExecution) jobExecution.getStepExecutions().toArray()[1];
@@ -770,7 +835,7 @@ class MongodbJobRepositoryTest extends MongoDBContainerConfig {
     @Test
     void add_null() {
         try {
-            repository.add((StepExecution) null);
+            repository.add(null);
             fail("IllegalArgumentException expected");
         } catch (IllegalArgumentException e) {
             assertEquals("StepExecution cannot be null.", e.getMessage());
@@ -818,9 +883,9 @@ class MongodbJobRepositoryTest extends MongoDBContainerConfig {
 
         var jobExecutionDoc = mongoTemplate.findOne(Query.query(Criteria
                         .where(JOB_EXECUTION_ID).is(jobExecution.getId())),
-                Document.class, jobCollectionName);
+                JobExecutionDocument.class, jobCollectionName);
 
-        jobExecution = JobExecutionConverter.convert(jobExecutionDoc);
+        jobExecution = jobExecutionDocumentMapper.toJobExecution(jobExecutionDoc);
 
         assertEquals(3, jobExecution.getStepExecutions().size());
 
@@ -863,9 +928,9 @@ class MongodbJobRepositoryTest extends MongoDBContainerConfig {
 
         var jobExecutionDoc = mongoTemplate.findOne(Query.query(Criteria
                         .where(JOB_EXECUTION_ID).is(jobExecution.getId())),
-                Document.class, jobCollectionName);
+                JobExecutionDocument.class, jobCollectionName);
 
-        var updatedJobExecution = JobExecutionConverter.convert(jobExecutionDoc);
+        var updatedJobExecution = jobExecutionDocumentMapper.toJobExecution(jobExecutionDoc);
 
         var actualStep1 = (StepExecution) updatedJobExecution.getStepExecutions().toArray()[0];
         assertEquals("Example Step", actualStep1.getStepName());
@@ -1027,15 +1092,14 @@ class MongodbJobRepositoryTest extends MongoDBContainerConfig {
         assertEquals(2L, step3.getId());
 
         step2.getExecutionContext().put("TestKey", "TestValue");
-        var lastUpdatedBefore = step2.getLastUpdated();
 
         repository.updateExecutionContext(step2);
 
         var jobExecutionDoc = mongoTemplate.findOne(Query.query(Criteria
                         .where(JOB_EXECUTION_ID).is(jobExecution.getId())),
-                Document.class, jobCollectionName);
+                JobExecutionDocument.class, jobCollectionName);
 
-        var updatedJobExecution = JobExecutionConverter.convert(jobExecutionDoc);
+        var updatedJobExecution = jobExecutionDocumentMapper.toJobExecution(jobExecutionDoc);
 
         var actualStep3 = (StepExecution) updatedJobExecution.getStepExecutions().toArray()[2];
         assertEquals("Step 3", actualStep3.getStepName());
@@ -1117,8 +1181,8 @@ class MongodbJobRepositoryTest extends MongoDBContainerConfig {
         step.setStartTime(Date.from(OffsetDateTime.of(2020, 2, 4, 0, 0, 0, 0, ZoneOffset.UTC).toInstant()));
         step.setId(24L);
 
-        mongoTemplate.insert(JobExecutionConverter.convert(jobExecution1), jobCollectionName);
-        mongoTemplate.insert(JobExecutionConverter.convert(jobExecution2), jobCollectionName);
+        mongoTemplate.insert(jobExecutionDocumentMapper.toJobExecutionDocument(jobExecution1), jobCollectionName);
+        mongoTemplate.insert(jobExecutionDocumentMapper.toJobExecutionDocument(jobExecution2), jobCollectionName);
 
         return jobInstance;
     }

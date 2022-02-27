@@ -3,6 +3,8 @@ package io.github.wirednerd.springbatch.mongo;
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
 
+import static io.github.wirednerd.springbatch.document.JobExecutionDocumentMapper.*;
+
 /**
  * Contains static final strings used by springbatch.mongo classes
  *
@@ -19,43 +21,6 @@ public class MongodbRepositoryConstants {
 
     // JobExecution
     public static final String JOB_EXECUTION = "jobExecution";
-    public static final String JOB_EXECUTION_ID = "jobExecutionId";
-    public static final String JOB_PARAMETERS = "jobParameters";
-    public static final String JOB_INSTANCE_ID = "jobInstanceId";
-    public static final String JOB_NAME = "jobName";
-    public static final String JOB_KEY = "jobKey";
-    public static final String STEP_EXECUTIONS = "stepExecutions";
-    public static final String CREATE_TIME = "createTime";
-    public static final String JOB_CONFIGURATION_NAME = "jobConfigurationName";
-    public static final String VERSION = "version";
-
-    // StepExecution
-    public static final String STEP_EXECUTION_ID = "stepExecutionId";
-    public static final String STEP_NAME = "stepName";
-    public static final String READ_COUNT = "readCount";
-    public static final String WRITE_COUNT = "writeCount";
-    public static final String COMMIT_COUNT = "commitCount";
-    public static final String ROLLBACK_COUNT = "rollbackCount";
-    public static final String READ_SKIP_COUNT = "readSkipCount";
-    public static final String PROCESS_SKIP_COUNT = "processSkipCount";
-    public static final String WRITE_SKIP_COUNT = "writeSkipCount";
-    public static final String FILTER_COUNT = "filterCount";
-
-    // JobExecution & StepExecution
-    public static final String STATUS = "status";
-    public static final String START_TIME = "startTime";
-    public static final String END_TIME = "endTime";
-    public static final String LAST_UPDATED = "lastUpdated";
-    public static final String EXIT_CODE = "exitCode";
-    public static final String EXIT_DESCRIPTION = "exitDescription";
-    public static final String EXECUTION_CONTEXT = "executionContext";
-
-    // JobParameter
-    public static final String IDENTIFYING = "identifying";
-    public static final String STRING = "STRING";
-    public static final String DATE = "DATE";
-    public static final String LONG = "LONG";
-    public static final String DOUBLE = "DOUBLE";
 
     // StepExecution Update
     private static final String STEP_EXECUTION_ARRAY_ELEMENT = STEP_EXECUTIONS + ".$[elem].";
