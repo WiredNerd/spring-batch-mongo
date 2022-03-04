@@ -11,6 +11,7 @@ import static io.github.wirednerd.springbatch.document.JobExecutionDocumentMappe
  * @author Peter Busch
  */
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
+@SuppressWarnings("SameNameButDifferent")
 public class MongodbRepositoryConstants {
 
     public static final String ID = "_id"; //NOPMD
