@@ -21,6 +21,7 @@ import static io.github.wirednerd.springbatch.document.JobExecutionDocumentMappe
  *
  * @author Peter Busch
  */
+@SuppressWarnings("SameNameButDifferent")
 @Data
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonIgnoreProperties(ignoreUnknown = true)

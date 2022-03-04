@@ -32,6 +32,7 @@ import static org.springframework.data.mongodb.core.aggregation.Aggregation.*;
  *
  * @author Peter Busch
  */
+@SuppressWarnings("SameNameButDifferent")
 public class MongodbJobExplorer implements JobExplorer {
 
     /**

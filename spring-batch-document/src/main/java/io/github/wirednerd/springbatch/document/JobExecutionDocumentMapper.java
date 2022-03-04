@@ -28,6 +28,7 @@ import java.util.stream.Collectors;
  */
 @Setter
 @NoArgsConstructor
+@SuppressWarnings("SameNameButDifferent")
 public class JobExecutionDocumentMapper {
 
     public static final String ISO_DATE_PATTERN = "yyyy-MM-dd'T'HH:mm:ss.SSSZ";

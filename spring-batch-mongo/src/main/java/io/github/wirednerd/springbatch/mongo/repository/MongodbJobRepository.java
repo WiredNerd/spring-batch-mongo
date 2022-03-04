@@ -106,7 +106,7 @@ import static org.springframework.data.mongodb.core.aggregation.Aggregation.*;
  * @author Peter Busch
  */
 @Slf4j
-@SuppressWarnings({"PMD.TooManyMethods", "PMD.CommentSize"})
+@SuppressWarnings({"PMD.TooManyMethods", "PMD.CommentSize", "SameNameButDifferent"})
 public class MongodbJobRepository implements JobRepository {
 
     /**
