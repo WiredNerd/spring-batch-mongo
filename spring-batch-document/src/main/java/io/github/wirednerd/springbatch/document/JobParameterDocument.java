@@ -26,6 +26,7 @@ import static io.github.wirednerd.springbatch.document.JobExecutionDocumentMappe
 @ToString
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonIgnoreProperties(ignoreUnknown = true)
+@SuppressWarnings("SameNameButDifferent")
 public class JobParameterDocument {
 
     @JsonProperty(STRING)

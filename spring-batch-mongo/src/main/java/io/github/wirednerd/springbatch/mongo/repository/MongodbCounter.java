@@ -26,6 +26,7 @@ import org.springframework.util.Assert;
  *
  * @author Peter Busch
  */
+@SuppressWarnings("SameNameButDifferent")
 public class MongodbCounter {
 
     /**

@@ -57,6 +57,7 @@ import static io.github.wirednerd.springbatch.mongo.MongodbRepositoryConstants.D
  *
  * @author Peter Busch
  */
+@SuppressWarnings("SameNameButDifferent")
 public class MongodbBatchConfigurer implements BatchConfigurer {
 
     private final JobRepository jobRepository;
@@ -144,6 +145,8 @@ public class MongodbBatchConfigurer implements BatchConfigurer {
     }
 
     /**
+     * Create a Builder for {@link MongodbBatchConfigurer}
+     *
      * @return Builder for {@link MongodbBatchConfigurer}
      */
     public static Builder builder() {

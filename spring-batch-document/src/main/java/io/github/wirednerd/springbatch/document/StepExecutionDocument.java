@@ -23,6 +23,7 @@ import static io.github.wirednerd.springbatch.document.JobExecutionDocumentMappe
 @Data
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonIgnoreProperties(ignoreUnknown = true)
+@SuppressWarnings("SameNameButDifferent")
 public class StepExecutionDocument {
 
     @JsonProperty(STEP_EXECUTION_ID)

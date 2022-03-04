@@ -16,6 +16,7 @@ import java.util.LinkedHashMap;
  */
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonIgnoreProperties(ignoreUnknown = true)
+@SuppressWarnings("SameNameButDifferent")
 public class JobParametersDocument extends LinkedHashMap<String, JobParameterDocument> {
 
     /**
