@@ -18,7 +18,9 @@ import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.annotation.EnableTransactionManagement;
 import org.springframework.util.Assert;
 
-import static io.github.wirednerd.springbatch.mongo.MongodbRepositoryConstants.*;
+import static io.github.wirednerd.springbatch.document.JobExecutionDocumentMapper.*;
+import static io.github.wirednerd.springbatch.mongo.MongodbRepositoryConstants.DEFAULT_COUNTER_COLLECTION;
+import static io.github.wirednerd.springbatch.mongo.MongodbRepositoryConstants.DEFAULT_JOB_COLLECTION;
 
 /**
  * <p>Primary class for enabling Mongodb for storing Spring Batch job execution data.</p>
@@ -55,6 +57,7 @@ import static io.github.wirednerd.springbatch.mongo.MongodbRepositoryConstants.*
  *
  * @author Peter Busch
  */
+@SuppressWarnings("SameNameButDifferent")
 public class MongodbBatchConfigurer implements BatchConfigurer {
 
     private final JobRepository jobRepository;
@@ -142,6 +145,8 @@ public class MongodbBatchConfigurer implements BatchConfigurer {
     }
 
     /**
+     * Create a Builder for {@link MongodbBatchConfigurer}
+     *
      * @return Builder for {@link MongodbBatchConfigurer}
      */
     public static Builder builder() {

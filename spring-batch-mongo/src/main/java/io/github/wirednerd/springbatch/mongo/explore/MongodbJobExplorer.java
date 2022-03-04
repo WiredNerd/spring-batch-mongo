@@ -1,6 +1,10 @@
 package io.github.wirednerd.springbatch.mongo.explore;
 
+import io.github.wirednerd.springbatch.document.JobExecutionDocument;
+import io.github.wirednerd.springbatch.document.JobExecutionDocumentMapper;
+import io.github.wirednerd.springbatch.document.JobInstanceDocument;
 import lombok.Getter;
+import lombok.Setter;
 import org.bson.Document;
 import org.springframework.batch.core.JobExecution;
 import org.springframework.batch.core.JobInstance;
@@ -13,15 +17,14 @@ import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.util.Assert;
 import org.springframework.util.CollectionUtils;
-import io.github.wirednerd.springbatch.mongo.converter.JobExecutionConverter;
-import io.github.wirednerd.springbatch.mongo.converter.JobInstanceConverter;
 
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import static io.github.wirednerd.springbatch.document.JobExecutionDocumentMapper.*;
+import static io.github.wirednerd.springbatch.mongo.MongodbRepositoryConstants.ID;
 import static org.springframework.data.mongodb.core.aggregation.Aggregation.*;
-import static io.github.wirednerd.springbatch.mongo.MongodbRepositoryConstants.*;
 
 /**
  * <p>Implementation of a {@link JobExplorer} that uses MongoDB instead of a jdbc database.</p>
@@ -29,6 +32,7 @@ import static io.github.wirednerd.springbatch.mongo.MongodbRepositoryConstants.*
  *
  * @author Peter Busch
  */
+@SuppressWarnings("SameNameButDifferent")
 public class MongodbJobExplorer implements JobExplorer {
 
     /**
@@ -48,6 +52,16 @@ public class MongodbJobExplorer implements JobExplorer {
     private final String jobCollectionName;
 
     /**
+     * Used for converting Batch Job Execution Objects to Document objects
+     *
+     * @param jobExecutionDocumentMapper {@link JobExecutionDocumentMapper}
+     * @return {@link JobExecutionDocumentMapper}
+     */
+    @Getter
+    @Setter
+    private JobExecutionDocumentMapper jobExecutionDocumentMapper = new JobExecutionDocumentMapper();
+
+    /**
      * @param mongoTemplate     {@link MongoTemplate} to use.
      * @param jobCollectionName where the job execution data is stored.
      */
@@ -64,9 +78,9 @@ public class MongodbJobExplorer implements JobExplorer {
     public JobInstance getJobInstance(Long instanceId) {
         var document = mongoTemplate.findOne(Query
                         .query(Criteria.where(JOB_INSTANCE_ID).is(instanceId)),
-                Document.class, jobCollectionName);
+                JobInstanceDocument.class, jobCollectionName);
 
-        return document == null ? null : JobInstanceConverter.convert(document);
+        return document == null ? null : jobExecutionDocumentMapper.toJobInstance(document);
     }
 
     /**
@@ -137,9 +151,9 @@ public class MongodbJobExplorer implements JobExplorer {
                 limit(count));
 
         return mongoTemplate
-                .aggregate(query, jobCollectionName, Document.class)
+                .aggregate(query, jobCollectionName, JobInstanceDocument.class)
                 .getMappedResults()
-                .stream().map(JobInstanceConverter::convert)
+                .stream().map(jobExecutionDocumentMapper::toJobInstance)
                 .collect(Collectors.toList());
     }
 
@@ -166,9 +180,9 @@ public class MongodbJobExplorer implements JobExplorer {
                 limit(count));
 
         return mongoTemplate
-                .aggregate(query, jobCollectionName, Document.class)
+                .aggregate(query, jobCollectionName, JobInstanceDocument.class)
                 .getMappedResults()
-                .stream().map(JobInstanceConverter::convert)
+                .stream().map(jobExecutionDocumentMapper::toJobInstance)
                 .collect(Collectors.toList());
     }
 
@@ -184,9 +198,9 @@ public class MongodbJobExplorer implements JobExplorer {
         var document = mongoTemplate.findOne(Query.query(Criteria.where(JOB_NAME).is(jobName))
                         .with(Sort.by(JOB_INSTANCE_ID).descending())
                         .limit(1),
-                Document.class, jobCollectionName);
+                JobInstanceDocument.class, jobCollectionName);
 
-        return document == null ? null : JobInstanceConverter.convert(document);
+        return document == null ? null : jobExecutionDocumentMapper.toJobInstance(document);
     }
 
     /**
@@ -200,9 +214,9 @@ public class MongodbJobExplorer implements JobExplorer {
     public JobExecution getJobExecution(Long executionId) {
         var document = mongoTemplate.findOne(Query
                         .query(Criteria.where(JOB_EXECUTION_ID).is(executionId)),
-                Document.class, jobCollectionName);
+                JobExecutionDocument.class, jobCollectionName);
 
-        return document == null ? null : JobExecutionConverter.convert(document);
+        return document == null ? null : jobExecutionDocumentMapper.toJobExecution(document);
     }
 
     /**
@@ -219,8 +233,8 @@ public class MongodbJobExplorer implements JobExplorer {
         return mongoTemplate.find(Query
                                 .query(Criteria.where(JOB_INSTANCE_ID).is(jobInstance.getId()))
                                 .with(Sort.by(JOB_EXECUTION_ID).descending()),
-                        Document.class, jobCollectionName)
-                .stream().map(JobExecutionConverter::convert)
+                        JobExecutionDocument.class, jobCollectionName)
+                .stream().map(jobExecutionDocumentMapper::toJobExecution)
                 .collect(Collectors.toList());
     }
 
@@ -240,9 +254,9 @@ public class MongodbJobExplorer implements JobExplorer {
                         .query(Criteria.where(JOB_INSTANCE_ID).is(jobInstance.getId()))
                         .with(Sort.by(JOB_EXECUTION_ID).descending())
                         .limit(1),
-                Document.class, jobCollectionName);
+                JobExecutionDocument.class, jobCollectionName);
 
-        return document == null ? null : JobExecutionConverter.convert(document);
+        return document == null ? null : jobExecutionDocumentMapper.toJobExecution(document);
     }
 
     /**
@@ -258,8 +272,8 @@ public class MongodbJobExplorer implements JobExplorer {
                                 .addCriteria(Criteria.where(START_TIME).ne(null))
                                 .addCriteria(Criteria.where(END_TIME).is(null))
                                 .with(Sort.by(JOB_EXECUTION_ID).descending()),
-                        Document.class, jobCollectionName)
-                .stream().map(JobExecutionConverter::convert)
+                        JobExecutionDocument.class, jobCollectionName)
+                .stream().map(jobExecutionDocumentMapper::toJobExecution)
                 .collect(Collectors.toSet());
     }
 
@@ -280,20 +294,20 @@ public class MongodbJobExplorer implements JobExplorer {
 
         var document = mongoTemplate.findOne(Query
                         .query(Criteria.where(JOB_EXECUTION_ID).is(jobExecutionId)),
-                Document.class, jobCollectionName);
+                JobExecutionDocument.class, jobCollectionName);
 
         if (document == null) {
             return null;
         }
 
-        var jobExecution = JobExecutionConverter.convert(document);
+        var jobExecution = jobExecutionDocumentMapper.toJobExecution(document);
 
         if (CollectionUtils.isEmpty(jobExecution.getStepExecutions())) {
             return null;
         }
 
         for (var step : jobExecution.getStepExecutions()) {
-            if (stepExecutionId == step.getId()) {
+            if (stepExecutionId.equals(step.getId())) {
                 return step;
             }
         }

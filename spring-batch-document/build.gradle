@@ -14,15 +14,11 @@ repositories {
 }
 
 dependencies {
-    api project(":spring-batch-document")
     implementation 'org.springframework.batch:spring-batch-core:latest.release'
-    implementation 'org.springframework.data:spring-data-mongodb:[3.2,)'  // version 3.2 for compatibility with boot 2.5
+    implementation 'org.springframework.data:spring-data-mongodb:[3.2,)' // version 3.2 for compatibility with boot 2.5
 
-    // Fix warning: unknown enum constant javax.annotation.meta.When.MAYBE
-    implementation 'org.netbeans.api:org-netbeans-api-annotations-common:latest.release'
-
-    testImplementation 'org.junit.jupiter:junit-jupiter'
     testImplementation "org.springframework.boot:spring-boot-starter-test:${springbootVersion}"
+    testImplementation 'org.junit.jupiter:junit-jupiter:latest.release'
     testImplementation 'org.mongodb:mongodb-driver-sync:latest.release'
 }
 
@@ -38,7 +34,6 @@ java {
 javadoc {
     options.addBooleanOption('html5', true)
     excludes = [
-            'io/github/wirednerd/springbatch/mongo/MongodbRepositoryConstants**'
     ]
 }
 
@@ -56,10 +51,11 @@ pmd {
 pmdTest.enabled = false
 
 pitest {
-    targetClasses = ['io.github.wirednerd.springbatch.mongo.*']
-    threads = 8
-    outputFormats = ['XML', 'HTML']
+    targetClasses = ['io.github.wirednerd.springbatch.document.*']
+    outputFormats = ["XML", "HTML"]
+    exportLineCoverage = true
     timestampedReports = false
+    threads = 8
     junit5PluginVersion = '0.15'
 }
 
@@ -74,8 +70,8 @@ publishing {
         mavenJava(MavenPublication) {
             from components.java
             pom {
-                name = "io.github.wirednerd:spring-batch-mongo"
-                description = 'Store Spring Batch Execution Data in MongoDB'
+                name = "io.github.wirednerd:spring-batch-document"
+                description = 'Store Spring Batch Execution Data in Document Formats'
                 url = 'https://github.com/WiredNerd/spring-batch-mongo'
                 licenses {
                     license {

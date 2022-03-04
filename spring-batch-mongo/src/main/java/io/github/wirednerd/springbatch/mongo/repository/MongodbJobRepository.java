@@ -1,8 +1,12 @@
 package io.github.wirednerd.springbatch.mongo.repository;
 
 
-import io.github.wirednerd.springbatch.mongo.converter.ExecutionContextConverter;
+import io.github.wirednerd.springbatch.document.JobExecutionDocument;
+import io.github.wirednerd.springbatch.document.JobExecutionDocumentMapper;
+import io.github.wirednerd.springbatch.document.StepExecutionDocument;
+import lombok.Data;
 import lombok.Getter;
+import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import org.bson.Document;
 import org.springframework.batch.core.*;
@@ -14,23 +18,23 @@ import org.springframework.batch.item.ExecutionContext;
 import org.springframework.dao.OptimisticLockingFailureException;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.mongodb.core.MongoTemplate;
+import org.springframework.data.mongodb.core.mapping.Field;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.data.mongodb.core.query.Update;
 import org.springframework.lang.Nullable;
 import org.springframework.util.Assert;
 import org.springframework.util.CollectionUtils;
-import io.github.wirednerd.springbatch.mongo.converter.JobExecutionConverter;
-import io.github.wirednerd.springbatch.mongo.converter.JobInstanceConverter;
-import io.github.wirednerd.springbatch.mongo.converter.StepExecutionConverter;
 
 import java.util.Collection;
 import java.util.Date;
+import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
-import static org.springframework.data.mongodb.core.aggregation.Aggregation.*;
+import static io.github.wirednerd.springbatch.document.JobExecutionDocumentMapper.*;
 import static io.github.wirednerd.springbatch.mongo.MongodbRepositoryConstants.*;
+import static org.springframework.data.mongodb.core.aggregation.Aggregation.*;
 
 /**
  * <p>Implementation of a {@link JobRepository} that uses MongoDB instead of a jdbc database.</p>
@@ -102,7 +106,7 @@ import static io.github.wirednerd.springbatch.mongo.MongodbRepositoryConstants.*
  * @author Peter Busch
  */
 @Slf4j
-@SuppressWarnings({"PMD.TooManyMethods", "PMD.CommentSize"})
+@SuppressWarnings({"PMD.TooManyMethods", "PMD.CommentSize", "SameNameButDifferent", "JavaUtilDate"})
 public class MongodbJobRepository implements JobRepository {
 
     /**
@@ -153,7 +157,25 @@ public class MongodbJobRepository implements JobRepository {
     @Getter
     private final MongodbCounter stepExecutionCounter;
 
-    private static JobKeyGenerator<JobParameters> jobKeyGenerator = new DefaultJobKeyGenerator();
+    /**
+     * Used for converting Batch Job Execution Objects to Document objects
+     *
+     * @param jobExecutionDocumentMapper {@link JobExecutionDocumentMapper}
+     * @return {@link JobExecutionDocumentMapper}
+     */
+    @Getter
+    @Setter
+    private JobExecutionDocumentMapper jobExecutionDocumentMapper = new JobExecutionDocumentMapper();
+
+    /**
+     * Used for the generation of the key used in identifying unique JobInstance.
+     *
+     * @param jobKeyGenerator {@link JobKeyGenerator}&lt;{@link JobParameters}&gt;
+     * @return {@link JobKeyGenerator}&lt;{@link JobParameters}&gt;
+     */
+    @Getter
+    @Setter
+    private JobKeyGenerator<JobParameters> jobKeyGenerator = new DefaultJobKeyGenerator();
 
     /**
      * <p>Initializes Counter objects for jobInstanceId, jobExecutionId, and stepExecutionId</p>
@@ -211,7 +233,7 @@ public class MongodbJobRepository implements JobRepository {
 
         var jobInstance = new JobInstance(jobInstanceCounter.nextValue(), jobName);
 
-        mongoTemplate.insert(JobInstanceConverter.convert(jobInstance, jobParameters), jobCollectionName);
+        mongoTemplate.insert(jobExecutionDocumentMapper.toJobExecutionDocument(jobInstance, jobParameters), jobCollectionName);
 
         return jobInstance;
     }
@@ -286,7 +308,7 @@ public class MongodbJobRepository implements JobRepository {
                         .addCriteria(Criteria.where(JOB_NAME).is(jobName))
                         .addCriteria(Criteria.where(JOB_KEY).is(jobKey))
                         .with(Sort.by(JOB_EXECUTION_ID).descending())
-                , Document.class, jobCollectionName);
+                , JobExecutionDocument.class, jobCollectionName);
 
         if (CollectionUtils.isEmpty(jobExecutionDocs)) {
             // No JobInstance or JobExecution Found
@@ -299,7 +321,7 @@ public class MongodbJobRepository implements JobRepository {
         }
 
         // Remove JobInstance only record, if present
-        jobExecutionDocs.removeIf(doc -> doc.getLong(JOB_EXECUTION_ID) == null);
+        jobExecutionDocs.removeIf(doc -> doc.getJobExecutionId() == null);
 
         if (CollectionUtils.isEmpty(jobExecutionDocs)) {
             // JobInstance created, but has no JobExecutions
@@ -307,10 +329,11 @@ public class MongodbJobRepository implements JobRepository {
         }
 
         checkForRunningExecutions(jobExecutionDocs.stream()
-                .map(JobExecutionConverter::convert).collect(Collectors.toList()));
+                .map(jobExecutionDocumentMapper::toJobExecution)
+                .collect(Collectors.toList()));
 
         // build new JobExecution using JobInstance and ExecutionContext from most recent JobExecution
-        var previousJobExecution = JobExecutionConverter.convert(jobExecutionDocs.get(0));
+        var previousJobExecution = jobExecutionDocumentMapper.toJobExecution(jobExecutionDocs.get(0));
         var jobExecution = new JobExecution(previousJobExecution.getJobInstance(), jobParameters, null);
         jobExecution.setExecutionContext(previousJobExecution.getExecutionContext());
         jobExecution.setLastUpdated(new Date(System.currentTimeMillis()));
@@ -321,11 +344,14 @@ public class MongodbJobRepository implements JobRepository {
     private JobExecution insertNewJobExecution(JobExecution jobExecution) {
         jobExecution.setId(jobExecutionCounter.nextValue());
         jobExecution.incrementVersion();
+
+        var document = (org.bson.Document) mongoTemplate.getConverter().convertToMongoType(jobExecutionDocumentMapper.toJobExecutionDocument(jobExecution));
+
         mongoTemplate.upsert(new Query()
                         .addCriteria(Criteria.where(JOB_NAME).is(jobExecution.getJobInstance().getJobName()))
                         .addCriteria(Criteria.where(JOB_KEY).is(jobKeyGenerator.generateKey(jobExecution.getJobParameters())))
                         .addCriteria(Criteria.where(JOB_EXECUTION_ID).is(null)),
-                Update.fromDocument(JobExecutionConverter.convert(jobExecution)), jobCollectionName);
+                Update.fromDocument(document), jobCollectionName);
 
         return jobExecution;
     }
@@ -391,12 +417,12 @@ public class MongodbJobRepository implements JobRepository {
                         .addCriteria(Criteria.where(JOB_NAME).is(jobExecution.getJobInstance().getJobName()))
                         .addCriteria(Criteria.where(JOB_KEY).is(jobKeyGenerator.generateKey(jobExecution.getJobParameters())))
                         .addCriteria(Criteria.where(JOB_EXECUTION_ID).is(jobExecution.getId()))
-                , Document.class, jobCollectionName);
+                , JobExecutionDocument.class, jobCollectionName);
 
         Assert.state(jobExecutionSavedDoc != null,
                 () -> "Job Execution not found for jobExecutionId=" + jobExecution.getId());
 
-        var savedJobExecution = JobExecutionConverter.convert(jobExecutionSavedDoc);
+        var savedJobExecution = jobExecutionDocumentMapper.toJobExecution(jobExecutionSavedDoc);
 
         var savedVersion = savedJobExecution.getVersion();
 
@@ -453,7 +479,7 @@ public class MongodbJobRepository implements JobRepository {
         var updateResult = mongoTemplate.updateFirst(
                 Query.query(Criteria.where(JOB_EXECUTION_ID).is(jobExecution.getId())),
                 Update.update(EXECUTION_CONTEXT,
-                        ExecutionContextConverter.serializeContext(jobExecution.getExecutionContext())),
+                        jobExecutionDocumentMapper.serializeContext(jobExecution.getExecutionContext())),
                 jobCollectionName);
 
         Assert.state(updateResult.getMatchedCount() == 1,
@@ -478,8 +504,8 @@ public class MongodbJobRepository implements JobRepository {
                         .addCriteria(Criteria.where(JOB_KEY).is(jobKey))
                         .addCriteria(Criteria.where(JOB_EXECUTION_ID).ne(null))
                         .with(Sort.by(JOB_EXECUTION_ID).descending())
-                , Document.class, jobCollectionName);
-        return jobExecutionDoc == null ? null : JobExecutionConverter.convert(jobExecutionDoc);
+                , JobExecutionDocument.class, jobCollectionName);
+        return jobExecutionDoc == null ? null : jobExecutionDocumentMapper.toJobExecution(jobExecutionDoc);
     }
 
     /**
@@ -505,7 +531,7 @@ public class MongodbJobRepository implements JobRepository {
 
         mongoTemplate.updateFirst(Query.query(Criteria
                         .where(JOB_EXECUTION_ID).is(stepExecution.getJobExecutionId())),
-                new Update().push(STEP_EXECUTIONS, StepExecutionConverter.convert(stepExecution)),
+                new Update().push(STEP_EXECUTIONS, jobExecutionDocumentMapper.toStepExecutionDocument(stepExecution)),
                 jobCollectionName);
     }
 
@@ -602,7 +628,7 @@ public class MongodbJobRepository implements JobRepository {
         Assert.notNull(stepExecution.getId(), "StepExecution must already be saved (have an id assigned)");
 
         synchronized (stepExecution.getJobExecution()) {
-            var executionContextDoc = ExecutionContextConverter.serializeContext(stepExecution.getExecutionContext());
+            var executionContextDoc = jobExecutionDocumentMapper.serializeContext(stepExecution.getExecutionContext());
 
             mongoTemplate.updateFirst(new Query()
                             .addCriteria(Criteria.where(JOB_EXECUTION_ID).is(stepExecution.getJobExecutionId())),
@@ -616,6 +642,16 @@ public class MongodbJobRepository implements JobRepository {
     private void validateStepExecution(StepExecution stepExecution) {
         Assert.notNull(stepExecution, "StepExecution cannot be null.");
         Assert.notNull(stepExecution.getJobExecutionId(), "StepExecution must belong to persisted JobExecution.");
+    }
+
+    @Data
+    static class StepExecutionSearchResult {
+
+        @Field(STEP_EXECUTIONS)
+        private StepExecutionDocument stepExecutions;
+
+        @Field(JOB_EXECUTION)
+        private List<JobExecutionDocument> jobExecution;
     }
 
     /**
@@ -638,18 +674,18 @@ public class MongodbJobRepository implements JobRepository {
                 lookup(jobCollectionName, JOB_EXECUTION_ID, JOB_EXECUTION_ID, JOB_EXECUTION));
 
         var resultDoc = mongoTemplate
-                .aggregate(query, jobCollectionName, Document.class)
+                .aggregate(query, jobCollectionName, StepExecutionSearchResult.class)
                 .getUniqueMappedResult();
 
-        if (CollectionUtils.isEmpty(resultDoc)) {
+        if (resultDoc == null) {
             return null;
         }
 
-        var stepExecutionId = resultDoc.get(STEP_EXECUTIONS, Document.class).getLong(STEP_EXECUTION_ID);
+        var stepExecutionId = resultDoc.getStepExecutions().getStepExecutionId();
 
-        var jobExecutionDoc = resultDoc.getList(JOB_EXECUTION, Document.class).get(0);
+        var jobExecutionDoc = resultDoc.getJobExecution().get(0);
 
-        for (var stepExecution : JobExecutionConverter.convert(jobExecutionDoc).getStepExecutions()) {
+        for (var stepExecution : jobExecutionDocumentMapper.toJobExecution(jobExecutionDoc).getStepExecutions()) {
             if (Objects.equals(stepExecutionId, stepExecution.getId())) {
                 return stepExecution;
             }

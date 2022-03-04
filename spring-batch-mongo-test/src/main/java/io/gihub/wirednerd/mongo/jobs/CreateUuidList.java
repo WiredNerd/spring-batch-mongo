@@ -42,11 +42,12 @@ public class CreateUuidList {
         return new uuidItemReader();
     }
 
-    class uuidItemReader implements ItemReader<String>, ItemStream {
+    static class uuidItemReader implements ItemReader<String>, ItemStream {
         long processed = 0;
         long limit = 0;
         long errorOn = Long.MAX_VALUE;
 
+        @SuppressWarnings("deprecation")
         @BeforeStep
         public void beforeStep(StepExecution stepExecution) {
             JobParameters jobParameters = stepExecution.getJobParameters();
