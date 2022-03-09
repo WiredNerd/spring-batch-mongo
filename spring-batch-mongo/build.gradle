@@ -16,8 +16,9 @@ repositories {
 dependencies {
     api project(":spring-batch-document")
     implementation 'org.springframework.batch:spring-batch-core:latest.release'
-    implementation 'org.springframework.data:spring-data-mongodb:[3.2,)'  // version 3.2 for compatibility with boot 2.5
-
+    implementation 'org.springframework.data:spring-data-mongodb:[3.2,3.3)'
+    // version 3.2 for compatibility with boot 2.5
+    
     // Fix warning: unknown enum constant javax.annotation.meta.When.MAYBE
     implementation 'org.netbeans.api:org-netbeans-api-annotations-common:latest.release'
 

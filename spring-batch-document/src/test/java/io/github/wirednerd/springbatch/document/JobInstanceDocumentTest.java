@@ -5,6 +5,11 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import javax.xml.bind.JAXBContext;
+import javax.xml.bind.JAXBException;
+import java.io.StringReader;
+import java.io.StringWriter;
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -72,6 +77,50 @@ class JobInstanceDocumentTest extends MongoDBContainerConfig {
         assertEquals(0, docBson.size());
 
         var resultDoc = mongoTemplate.getConverter().read(JobInstanceDocument.class, docBson);
+
+        assertEquals(jobInstanceDocument, resultDoc);
+    }
+
+    @Test
+    void jaxb() throws JAXBException {
+        var context = JAXBContext.newInstance(JobInstanceDocument.class);
+
+        var marshaller = context.createMarshaller();
+        var unmarshaller = context.createUnmarshaller();
+
+        var stringWriter = new StringWriter();
+
+        marshaller.marshal(jobInstanceDocument, stringWriter);
+        String xmlString = stringWriter.toString();
+
+        assertTrue(xmlString.contains("<jobInstance>"), xmlString);
+        assertTrue(xmlString.contains("</jobInstance>"), xmlString);
+        assertTrue(xmlString.contains("<jobInstanceId>1</jobInstanceId>"), xmlString);
+        assertTrue(xmlString.contains("<jobName>NAME</jobName>"), xmlString);
+        assertTrue(xmlString.contains("<jobKey>KEY</jobKey>"), xmlString);
+
+        var resultDoc = (JobInstanceDocument) unmarshaller.unmarshal(new StringReader(xmlString));
+
+        assertEquals(jobInstanceDocument, resultDoc);
+    }
+
+    @Test
+    void jaxb_nulls() throws JAXBException {
+        jobInstanceDocument = new JobInstanceDocument();
+
+        var context = JAXBContext.newInstance(JobInstanceDocument.class);
+
+        var marshaller = context.createMarshaller();
+        var unmarshaller = context.createUnmarshaller();
+
+        var stringWriter = new StringWriter();
+
+        marshaller.marshal(jobInstanceDocument, stringWriter);
+        String xmlString = stringWriter.toString();
+
+        assertTrue(xmlString.contains("<jobInstance/>"), xmlString);
+
+        var resultDoc = (JobInstanceDocument) unmarshaller.unmarshal(new StringReader(xmlString));
 
         assertEquals(jobInstanceDocument, resultDoc);
     }

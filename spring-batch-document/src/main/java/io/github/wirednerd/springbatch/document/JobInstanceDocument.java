@@ -9,6 +9,11 @@ import org.springframework.batch.core.JobInstance;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.mapping.Field;
 
+import javax.xml.bind.annotation.XmlAccessType;
+import javax.xml.bind.annotation.XmlAccessorType;
+import javax.xml.bind.annotation.XmlElement;
+import javax.xml.bind.annotation.XmlRootElement;
+
 import static io.github.wirednerd.springbatch.document.JobExecutionDocumentMapper.*;
 
 /**
@@ -20,18 +25,23 @@ import static io.github.wirednerd.springbatch.document.JobExecutionDocumentMappe
 @Data
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonIgnoreProperties(ignoreUnknown = true)
+@XmlRootElement(name = "jobInstance")
+@XmlAccessorType(XmlAccessType.FIELD)
 @SuppressWarnings("SameNameButDifferent")
 public class JobInstanceDocument {
 
     @JsonProperty(JOB_INSTANCE_ID)
     @Field(JOB_INSTANCE_ID)
+    @XmlElement(name = JOB_INSTANCE_ID)
     private Long jobInstanceId;
 
     @JsonProperty(JOB_NAME)
     @Field(JOB_NAME)
+    @XmlElement(name = JOB_NAME)
     private String jobName;
 
     @JsonProperty(JOB_KEY)
     @Field(JOB_KEY)
+    @XmlElement(name = JOB_KEY)
     private String jobKey;
 }

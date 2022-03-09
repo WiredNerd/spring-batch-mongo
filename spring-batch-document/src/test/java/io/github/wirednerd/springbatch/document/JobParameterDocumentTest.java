@@ -4,6 +4,10 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Test;
 
+import javax.xml.bind.JAXBContext;
+import javax.xml.bind.JAXBException;
+import java.io.StringReader;
+import java.io.StringWriter;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.util.Date;
@@ -84,6 +88,59 @@ class JobParameterDocumentTest extends MongoDBContainerConfig {
         assertEquals(0, docBson.size());
 
         var resultDoc = mongoTemplate.getConverter().read(JobParameterDocument.class, docBson);
+
+        assertNull(resultDoc.getStringValue());
+        assertNull(resultDoc.getDateValue());
+        assertNull(resultDoc.getLongValue());
+        assertNull(resultDoc.getDoubleValue());
+        assertNull(resultDoc.getIdentifying());
+    }
+
+    @Test
+    void jaxb() throws JAXBException {
+        var context = JAXBContext.newInstance(JobParameterDocument.class);
+
+        var marshaller = context.createMarshaller();
+        var unmarshaller = context.createUnmarshaller();
+
+        var stringWriter = new StringWriter();
+
+        marshaller.marshal(jobParameterDocument, stringWriter);
+        String xmlString = stringWriter.toString();
+
+        assertTrue(xmlString.contains("<jobParameter identifying=\"true\">"), xmlString);
+        assertTrue(xmlString.contains("</jobParameter>"), xmlString);
+        assertTrue(xmlString.contains("<STRING>Test Value</STRING>"), xmlString);
+        assertTrue(xmlString.contains("<DATE>2022-02-19T01:02:04.005+0000</DATE>"), xmlString);
+        assertTrue(xmlString.contains("<LONG>123</LONG>"), xmlString);
+        assertTrue(xmlString.contains("<DOUBLE>3.14</DOUBLE>"), xmlString);
+
+        var resultDoc = (JobParameterDocument) unmarshaller.unmarshal(new StringReader(xmlString));
+
+        assertEquals(jobParameterDocument.getStringValue(), resultDoc.getStringValue());
+        assertEquals(testDate, resultDoc.getDateValue());
+        assertEquals(jobParameterDocument.getLongValue(), resultDoc.getLongValue());
+        assertEquals(jobParameterDocument.getDoubleValue(), resultDoc.getDoubleValue());
+        assertEquals(jobParameterDocument.getIdentifying(), resultDoc.getIdentifying());
+    }
+
+    @Test
+    void jaxb_nulls() throws JAXBException {
+        jobParameterDocument = new JobParameterDocument(null, null, null, null, null);
+
+        var context = JAXBContext.newInstance(JobParameterDocument.class);
+
+        var marshaller = context.createMarshaller();
+        var unmarshaller = context.createUnmarshaller();
+
+        var stringWriter = new StringWriter();
+
+        marshaller.marshal(jobParameterDocument, stringWriter);
+        String xmlString = stringWriter.toString();
+
+        assertTrue(xmlString.contains("<jobParameter/>"), xmlString);
+
+        var resultDoc = (JobParameterDocument) unmarshaller.unmarshal(new StringReader(xmlString));
 
         assertNull(resultDoc.getStringValue());
         assertNull(resultDoc.getDateValue());
