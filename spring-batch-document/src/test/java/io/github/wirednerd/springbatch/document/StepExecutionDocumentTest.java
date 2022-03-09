@@ -5,6 +5,10 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import javax.xml.bind.JAXBContext;
+import javax.xml.bind.JAXBException;
+import java.io.StringReader;
+import java.io.StringWriter;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.util.Date;
@@ -122,6 +126,64 @@ class StepExecutionDocumentTest extends MongoDBContainerConfig {
         assertEquals(0, docBson.size());
 
         var resultDoc = mongoTemplate.getConverter().read(StepExecutionDocument.class, docBson);
+
+        assertEquals(stepExecutionDocument, resultDoc);
+    }
+
+    @Test
+    void jaxb() throws JAXBException {
+        var context = JAXBContext.newInstance(StepExecutionDocument.class);
+
+        var marshaller = context.createMarshaller();
+        var unmarshaller = context.createUnmarshaller();
+
+        var stringWriter = new StringWriter();
+
+        marshaller.marshal(stepExecutionDocument, stringWriter);
+        String xmlString = stringWriter.toString();
+
+        assertTrue(xmlString.contains("<stepExecution>"), xmlString);
+        assertTrue(xmlString.contains("</stepExecution>"), xmlString);
+        assertTrue(xmlString.contains("<stepExecutionId>1</stepExecutionId>"), xmlString);
+        assertTrue(xmlString.contains("<stepName>Name</stepName>"), xmlString);
+        assertTrue(xmlString.contains("<readCount>2</readCount>"), xmlString);
+        assertTrue(xmlString.contains("<writeCount>3</writeCount>"), xmlString);
+        assertTrue(xmlString.contains("<commitCount>4</commitCount>"), xmlString);
+        assertTrue(xmlString.contains("<rollbackCount>5</rollbackCount>"), xmlString);
+        assertTrue(xmlString.contains("<readSkipCount>6</readSkipCount>"), xmlString);
+        assertTrue(xmlString.contains("<processSkipCount>7</processSkipCount>"), xmlString);
+        assertTrue(xmlString.contains("<writeSkipCount>8</writeSkipCount>"), xmlString);
+        assertTrue(xmlString.contains("<filterCount>9</filterCount>"), xmlString);
+        assertTrue(xmlString.contains("<status>Status</status>"), xmlString);
+        assertTrue(xmlString.contains("<startTime>2022-02-19T01:02:04.005+0000</startTime>"), xmlString);
+        assertTrue(xmlString.contains("<endTime>2022-02-20T01:02:04.005+0000</endTime>"), xmlString);
+        assertTrue(xmlString.contains("<lastUpdated>2022-02-21T01:02:04.005+0000</lastUpdated>"), xmlString);
+        assertTrue(xmlString.contains("<exitCode>Exit</exitCode>"), xmlString);
+        assertTrue(xmlString.contains("<exitDescription>Desc</exitDescription>"), xmlString);
+        assertTrue(xmlString.contains("<executionContext>ctx</executionContext>"), xmlString);
+
+        var resultDoc = (StepExecutionDocument) unmarshaller.unmarshal(new StringReader(xmlString));
+
+        assertEquals(stepExecutionDocument, resultDoc);
+    }
+
+    @Test
+    void jaxb_nulls() throws JAXBException {
+        stepExecutionDocument = new StepExecutionDocument();
+
+        var context = JAXBContext.newInstance(StepExecutionDocument.class);
+
+        var marshaller = context.createMarshaller();
+        var unmarshaller = context.createUnmarshaller();
+
+        var stringWriter = new StringWriter();
+
+        marshaller.marshal(stepExecutionDocument, stringWriter);
+        String xmlString = stringWriter.toString();
+
+        assertTrue(xmlString.contains("<stepExecution/>"), xmlString);
+
+        var resultDoc = (StepExecutionDocument) unmarshaller.unmarshal(new StringReader(xmlString));
 
         assertEquals(stepExecutionDocument, resultDoc);
     }

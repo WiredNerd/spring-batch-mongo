@@ -2,15 +2,16 @@ package io.github.wirednerd.springbatch.document;
 
 import com.fasterxml.jackson.annotation.*;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import lombok.EqualsAndHashCode;
-import lombok.Getter;
-import lombok.ToString;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 import org.springframework.batch.core.JobParameter;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.annotation.PersistenceConstructor;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.mapping.Field;
 
+import javax.xml.bind.annotation.*;
+import javax.xml.bind.annotation.adapters.XmlJavaTypeAdapter;
 import java.util.Date;
 
 import static io.github.wirednerd.springbatch.document.JobExecutionDocumentMapper.*;
@@ -21,34 +22,41 @@ import static io.github.wirednerd.springbatch.document.JobExecutionDocumentMappe
  *
  * @author Peter Busch
  */
-@Getter
-@EqualsAndHashCode
-@ToString
+@Data
+@NoArgsConstructor
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonIgnoreProperties(ignoreUnknown = true)
+@XmlRootElement(name = "jobParameter")
+@XmlAccessorType(XmlAccessType.FIELD)
 @SuppressWarnings("SameNameButDifferent")
 public class JobParameterDocument {
 
     @JsonProperty(STRING)
     @Field(STRING)
-    private final String stringValue;
+    @XmlElement(name = STRING)
+    private String stringValue;
 
     @JsonProperty(DATE)
     @Field(DATE)
     @JsonFormat(pattern = ISO_DATE_PATTERN)
-    private final Date dateValue;
+    @XmlElement(name = DATE)
+    @XmlJavaTypeAdapter(DateXmlAdapter.class)
+    private Date dateValue;
 
     @JsonProperty(LONG)
     @Field(LONG)
-    private final Long longValue;
+    @XmlElement(name = LONG)
+    private Long longValue;
 
     @JsonProperty(DOUBLE)
     @Field(DOUBLE)
-    private final Double doubleValue;
+    @XmlElement(name = DOUBLE)
+    private Double doubleValue;
 
     @JsonProperty(IDENTIFYING)
     @Field(IDENTIFYING)
-    private final Boolean identifying;
+    @XmlAttribute(name = IDENTIFYING)
+    private Boolean identifying;
 
     /**
      * This constructor is intended to be used by deserialization tools.

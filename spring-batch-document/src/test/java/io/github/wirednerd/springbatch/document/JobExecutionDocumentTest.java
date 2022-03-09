@@ -7,11 +7,16 @@ import org.bson.Document;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import javax.xml.bind.JAXBContext;
+import javax.xml.bind.JAXBException;
+import java.io.StringReader;
+import java.io.StringWriter;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.util.Date;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class JobExecutionDocumentTest extends MongoDBContainerConfig {
 
@@ -147,6 +152,69 @@ class JobExecutionDocumentTest extends MongoDBContainerConfig {
         assertEquals(0, docBson.size());
 
         var resultDoc = mongoTemplate.getConverter().read(JobExecutionDocument.class, docBson);
+
+        assertEquals(jobExecutionDocument, resultDoc);
+    }
+
+    @Test
+    void jaxb() throws JAXBException {
+        var context = JAXBContext.newInstance(JobExecutionDocument.class);
+
+        var marshaller = context.createMarshaller();
+        var unmarshaller = context.createUnmarshaller();
+
+        var stringWriter = new StringWriter();
+
+        marshaller.marshal(jobExecutionDocument, stringWriter);
+        String xmlString = stringWriter.toString();
+
+        assertTrue(xmlString.contains("<jobExecution>"), xmlString);
+        assertTrue(xmlString.contains("</jobExecution>"), xmlString);
+        assertTrue(xmlString.contains("<jobExecutionId>2</jobExecutionId>"), xmlString);
+        assertTrue(xmlString.contains("<version>3</version>"), xmlString);
+
+        assertTrue(xmlString.contains("<jobParameters>"), xmlString);
+        assertTrue(xmlString.contains("</jobParameters>"), xmlString);
+
+        assertTrue(xmlString.contains("<jobInstanceId>3</jobInstanceId>"), xmlString);
+        assertTrue(xmlString.contains("<jobName>Name</jobName>"), xmlString);
+        assertTrue(xmlString.contains("<jobKey>Key</jobKey>"), xmlString);
+
+        assertTrue(xmlString.contains("<stepExecutions>"), xmlString);
+        assertTrue(xmlString.contains("</stepExecutions>"), xmlString);
+
+        assertTrue(xmlString.contains("<status>StatusVal</status>"), xmlString);
+        assertTrue(xmlString.contains("<startTime>2022-02-19T01:02:04.005+0000</startTime>"), xmlString);
+        assertTrue(xmlString.contains("<createTime>2022-02-18T01:02:04.005+0000</createTime>"), xmlString);
+        assertTrue(xmlString.contains("<endTime>2022-02-20T01:02:04.005+0000</endTime>"), xmlString);
+        assertTrue(xmlString.contains("<lastUpdated>2022-02-21T01:02:04.005+0000</lastUpdated>"), xmlString);
+        assertTrue(xmlString.contains("<exitCode>Exit</exitCode>"), xmlString);
+        assertTrue(xmlString.contains("<exitDescription>Desc</exitDescription>"), xmlString);
+        assertTrue(xmlString.contains("<executionContext>Context</executionContext>"), xmlString);
+        assertTrue(xmlString.contains("<jobConfigurationName>Config</jobConfigurationName>"), xmlString);
+
+        var resultDoc = (JobExecutionDocument) unmarshaller.unmarshal(new StringReader(xmlString));
+
+        assertEquals(jobExecutionDocument, resultDoc);
+    }
+
+    @Test
+    void jaxb_nulls() throws JAXBException {
+        jobExecutionDocument = new JobExecutionDocument();
+
+        var context = JAXBContext.newInstance(JobExecutionDocument.class);
+
+        var marshaller = context.createMarshaller();
+        var unmarshaller = context.createUnmarshaller();
+
+        var stringWriter = new StringWriter();
+
+        marshaller.marshal(jobExecutionDocument, stringWriter);
+        String xmlString = stringWriter.toString();
+
+        assertTrue(xmlString.contains("<jobExecution/>"), xmlString);
+
+        var resultDoc = (JobExecutionDocument) unmarshaller.unmarshal(new StringReader(xmlString));
 
         assertEquals(jobExecutionDocument, resultDoc);
     }
