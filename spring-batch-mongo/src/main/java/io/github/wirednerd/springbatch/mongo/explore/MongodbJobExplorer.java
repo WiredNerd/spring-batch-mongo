@@ -4,7 +4,6 @@ import io.github.wirednerd.springbatch.document.JobExecutionDocument;
 import io.github.wirednerd.springbatch.document.JobExecutionDocumentMapper;
 import io.github.wirednerd.springbatch.document.JobInstanceDocument;
 import lombok.Getter;
-import lombok.Setter;
 import org.bson.Document;
 import org.springframework.batch.core.JobExecution;
 import org.springframework.batch.core.JobInstance;
@@ -54,20 +53,20 @@ public class MongodbJobExplorer implements JobExplorer {
     /**
      * Used for converting Batch Job Execution Objects to Document objects
      *
-     * @param jobExecutionDocumentMapper {@link JobExecutionDocumentMapper}
      * @return {@link JobExecutionDocumentMapper}
      */
     @Getter
-    @Setter
-    private JobExecutionDocumentMapper jobExecutionDocumentMapper = new JobExecutionDocumentMapper();
+    private final JobExecutionDocumentMapper jobExecutionDocumentMapper;
 
     /**
-     * @param mongoTemplate     {@link MongoTemplate} to use.
-     * @param jobCollectionName where the job execution data is stored.
+     * @param mongoTemplate              {@link MongoTemplate} to use.
+     * @param jobCollectionName          where the job execution data is stored.
+     * @param jobExecutionDocumentMapper used for converting Job Execution data
      */
-    public MongodbJobExplorer(MongoTemplate mongoTemplate, String jobCollectionName) {
+    public MongodbJobExplorer(MongoTemplate mongoTemplate, String jobCollectionName, JobExecutionDocumentMapper jobExecutionDocumentMapper) {
         this.mongoTemplate = mongoTemplate;
         this.jobCollectionName = jobCollectionName;
+        this.jobExecutionDocumentMapper = jobExecutionDocumentMapper;
     }
 
     /**
@@ -187,10 +186,10 @@ public class MongodbJobExplorer implements JobExplorer {
     }
 
     /**
-     * Find the last job instance by Id for the given job.
+     * Find the last job instance by id for the given job.
      *
      * @param jobName name of the job
-     * @return the last job instance by Id if any or null otherwise
+     * @return the last job instance by id if any or null otherwise
      * @since 4.2
      */
     @Override

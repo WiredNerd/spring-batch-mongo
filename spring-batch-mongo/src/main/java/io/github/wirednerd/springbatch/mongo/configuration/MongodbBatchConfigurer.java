@@ -1,13 +1,19 @@
 package io.github.wirednerd.springbatch.mongo.configuration;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import io.github.wirednerd.springbatch.document.JobExecutionDocumentMapper;
 import io.github.wirednerd.springbatch.mongo.explore.MongodbJobExplorer;
 import io.github.wirednerd.springbatch.mongo.repository.MongodbJobRepository;
 import lombok.NoArgsConstructor;
+import org.springframework.batch.core.JobKeyGenerator;
+import org.springframework.batch.core.JobParameters;
 import org.springframework.batch.core.configuration.annotation.BatchConfigurer;
 import org.springframework.batch.core.explore.JobExplorer;
 import org.springframework.batch.core.launch.JobLauncher;
 import org.springframework.batch.core.launch.support.SimpleJobLauncher;
+import org.springframework.batch.core.repository.ExecutionContextSerializer;
 import org.springframework.batch.core.repository.JobRepository;
+import org.springframework.batch.core.repository.dao.Jackson2ExecutionContextStringSerializer;
 import org.springframework.core.task.TaskExecutor;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.mongodb.MongoTransactionManager;
@@ -18,6 +24,9 @@ import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.annotation.EnableTransactionManagement;
 import org.springframework.util.Assert;
 
+import java.io.ByteArrayOutputStream;
+import java.nio.charset.Charset;
+
 import static io.github.wirednerd.springbatch.document.JobExecutionDocumentMapper.*;
 import static io.github.wirednerd.springbatch.mongo.MongodbRepositoryConstants.DEFAULT_COUNTER_COLLECTION;
 import static io.github.wirednerd.springbatch.mongo.MongodbRepositoryConstants.DEFAULT_JOB_COLLECTION;
@@ -25,7 +34,7 @@ import static io.github.wirednerd.springbatch.mongo.MongodbRepositoryConstants.D
 /**
  * <p>Primary class for enabling Mongodb for storing Spring Batch job execution data.</p>
  * <p>{@link MongoTemplate} and {@link PlatformTransactionManager} instances are required.
- * And it is stronly recommended to {@link EnableTransactionManagement}</p>
+ * And it is strongly recommended to {@link EnableTransactionManagement}</p>
  * <p>Example Configuration:</p>
  * <pre>
  * &#64;Configuration
@@ -57,7 +66,7 @@ import static io.github.wirednerd.springbatch.mongo.MongodbRepositoryConstants.D
  *
  * @author Peter Busch
  */
-@SuppressWarnings("SameNameButDifferent")
+@SuppressWarnings({"SameNameButDifferent", "PMD.CommentSize"})
 public class MongodbBatchConfigurer implements BatchConfigurer {
 
     private final JobRepository jobRepository;
@@ -68,27 +77,38 @@ public class MongodbBatchConfigurer implements BatchConfigurer {
     /**
      * MongodbBatchConfigurer can be created using this constructor or the static {@link MongodbBatchConfigurer.Builder}
      *
-     * @param mongoTemplate         to be used for Spring Batch job execution data.
-     * @param jobCollectionName     to be used for storing job execution data.
-     * @param counterCollectionName to be used for storing sequence objects.
-     * @param transactionManager    that can be used to manage transactions on the provided MongoTemplate
-     * @param taskExecutor          will be used when building the {@link SimpleJobLauncher}
+     * @param mongoTemplate              to be used for Spring Batch job execution data.
+     * @param jobCollectionName          to be used for storing job execution data.
+     * @param counterCollectionName      to be used for storing sequence objects.
+     * @param transactionManager         that can be used to manage transactions on the provided MongoTemplate
+     * @param taskExecutor               will be used when building the {@link SimpleJobLauncher}
+     * @param jobKeyGenerator            will be used when generating the jobKey field
+     * @param executionContextSerializer will be used when populating executionContext fields
+     * @param objectMapper               If the {@link ExecutionContextSerializer} is a {@link Jackson2ExecutionContextStringSerializer}, this {@link ObjectMapper} will be passed to it.
+     * @param executionContextCharset    will be is used when converting Execution Context between {@link ByteArrayOutputStream} and {@link String}
      */
     public MongodbBatchConfigurer(final MongoTemplate mongoTemplate,
                                   final String jobCollectionName, final String counterCollectionName,
                                   final PlatformTransactionManager transactionManager,
-                                  @Nullable final TaskExecutor taskExecutor) {
+                                  @Nullable final TaskExecutor taskExecutor,
+                                  @Nullable JobKeyGenerator<JobParameters> jobKeyGenerator,
+                                  @Nullable ExecutionContextSerializer executionContextSerializer,
+                                  @Nullable ObjectMapper objectMapper,
+                                  @Nullable Charset executionContextCharset) {
 
         Assert.notNull(mongoTemplate, "A MongoTemplate is required");
         Assert.notNull(transactionManager, "A MongoTransactionManager is required");
         Assert.hasLength(jobCollectionName, "Job Collection Name must not be null or blank");
         Assert.hasLength(counterCollectionName, "Counter Collection Name must not be null or blank");
 
-        this.jobRepository = new MongodbJobRepository(mongoTemplate, jobCollectionName, counterCollectionName);
+        JobExecutionDocumentMapper jobExecutionDocumentMapper = buildJobExecutionDocumentMapper(jobKeyGenerator,
+                executionContextSerializer, objectMapper, executionContextCharset);
+
+        jobRepository = new MongodbJobRepository(mongoTemplate, jobCollectionName, counterCollectionName, jobExecutionDocumentMapper);
         this.transactionManager = transactionManager;
 
         jobLauncher = new SimpleJobLauncher();
-        jobLauncher.setJobRepository(this.jobRepository);
+        jobLauncher.setJobRepository(jobRepository);
         jobLauncher.setTaskExecutor(taskExecutor);
         try {
             jobLauncher.afterPropertiesSet();
@@ -96,7 +116,7 @@ public class MongodbBatchConfigurer implements BatchConfigurer {
             throw new RuntimeException(e.getMessage(), e); //NOPMD
         }
 
-        jobExplorer = new MongodbJobExplorer(mongoTemplate, jobCollectionName);
+        jobExplorer = new MongodbJobExplorer(mongoTemplate, jobCollectionName, jobExecutionDocumentMapper);
 
         mongoTemplate.indexOps(jobCollectionName)
                 .ensureIndex(new Index()
@@ -122,6 +142,28 @@ public class MongodbBatchConfigurer implements BatchConfigurer {
                         .on(JOB_NAME, Sort.Direction.ASC)
                         .on(JOB_INSTANCE_ID, Sort.Direction.DESC)
                         .named("jobName_jobInstanceId"));
+    }
+
+    private JobExecutionDocumentMapper buildJobExecutionDocumentMapper(@Nullable JobKeyGenerator<JobParameters> jobKeyGenerator,
+                                                                       @Nullable ExecutionContextSerializer executionContextSerializer,
+                                                                       @Nullable ObjectMapper objectMapper,
+                                                                       @Nullable Charset executionContextCharset) {
+
+        JobExecutionDocumentMapper jobExecutionDocumentMapper = new JobExecutionDocumentMapper();
+        if (jobKeyGenerator != null) {
+            jobExecutionDocumentMapper.setJobKeyGenerator(jobKeyGenerator);
+        }
+        if (executionContextSerializer != null) {
+            jobExecutionDocumentMapper.setExecutionContextSerializer(executionContextSerializer);
+        }
+        if (objectMapper != null && jobExecutionDocumentMapper.getExecutionContextSerializer() instanceof Jackson2ExecutionContextStringSerializer) {
+            ((Jackson2ExecutionContextStringSerializer) jobExecutionDocumentMapper.getExecutionContextSerializer()).setObjectMapper(objectMapper);
+        }
+        if (executionContextCharset != null) {
+            jobExecutionDocumentMapper.setExecutionContextCharset(executionContextCharset);
+        }
+
+        return jobExecutionDocumentMapper;
     }
 
     @Override
@@ -174,6 +216,10 @@ public class MongodbBatchConfigurer implements BatchConfigurer {
         private String counterCollectionName = DEFAULT_COUNTER_COLLECTION;
         private PlatformTransactionManager mongoTransactionManager;
         private TaskExecutor taskExecutor;
+        private JobKeyGenerator<JobParameters> jobKeyGenerator;
+        private ExecutionContextSerializer executionContextSerializer;
+        private ObjectMapper objectMapper;
+        private Charset executionContextCharset;
 
         /**
          * Specify a {@link MongoTemplate} to be used for Spring Batch job execution data.
@@ -231,13 +277,62 @@ public class MongodbBatchConfigurer implements BatchConfigurer {
         }
 
         /**
+         * <p>Specify a {@link JobKeyGenerator} to be used when generating the jobKey field.</p>
+         * <p>See {@link JobExecutionDocumentMapper} for default value</p>
+         *
+         * @param jobKeyGenerator to be used for generating jobKey field.
+         * @return {@link Builder}
+         */
+        public Builder jobKeyGenerator(final JobKeyGenerator<JobParameters> jobKeyGenerator) {
+            this.jobKeyGenerator = jobKeyGenerator;
+            return this;
+        }
+
+        /**
+         * <p>Specify a {@link ExecutionContextSerializer} to be used when populating executionContext fields.</p>
+         * <p>See {@link JobExecutionDocumentMapper} for default value</p>
+         *
+         * @param executionContextSerializer to be used when populating executionContext fields.
+         * @return {@link Builder}
+         */
+        public Builder executionContextSerializer(final ExecutionContextSerializer executionContextSerializer) {
+            this.executionContextSerializer = executionContextSerializer;
+            return this;
+        }
+
+        /**
+         * <p>If the default or provided {@link ExecutionContextSerializer} is a {@link Jackson2ExecutionContextStringSerializer},
+         * this {@link ObjectMapper} will be passed to it.</p>
+         * <p>Otherwise, this field is ignored.</p>
+         *
+         * @param objectMapper to be used by the {@link Jackson2ExecutionContextStringSerializer}
+         * @return {@link Builder}
+         */
+        public Builder objectMapper(final ObjectMapper objectMapper) {
+            this.objectMapper = objectMapper;
+            return this;
+        }
+
+        /**
+         * <p>The {@link ExecutionContextSerializer} converts the Execution Context to/from a {@link ByteArrayOutputStream}</p>
+         * <p>This {@link Charset} is used when converting between {@link ByteArrayOutputStream} and {@link String} </p>
+         *
+         * @param executionContextCharset to use for converting to/from String
+         * @return {@link Builder}
+         */
+        public Builder executionContextCharset(final Charset executionContextCharset) {
+            this.executionContextCharset = executionContextCharset;
+            return this;
+        }
+
+        /**
          * Build a {@link MongodbBatchConfigurer} using the provided values.
          *
          * @return {@link MongodbBatchConfigurer}
          */
         public MongodbBatchConfigurer build() {
-            return new MongodbBatchConfigurer(mongoTemplate, jobCollectionName, counterCollectionName,
-                    mongoTransactionManager, taskExecutor);
+            return new MongodbBatchConfigurer(mongoTemplate, jobCollectionName, counterCollectionName, mongoTransactionManager,
+                    taskExecutor, jobKeyGenerator, executionContextSerializer, objectMapper, executionContextCharset);
         }
     }
 }

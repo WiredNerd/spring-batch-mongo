@@ -62,7 +62,7 @@ class MongodbJobRepositoryTest extends MongoDBContainerConfig {
 
     @BeforeEach
     void setUp() {
-        repository = new MongodbJobRepository(mongoTemplate, jobCollectionName, counterCollectionName);
+        repository = new MongodbJobRepository(mongoTemplate, jobCollectionName, counterCollectionName, new JobExecutionDocumentMapper());
         jobExecution = buildJobExecution();
         jobExecution.setId(0L);
         jobExecution.getJobInstance().setId(0L);
@@ -130,14 +130,14 @@ class MongodbJobRepositoryTest extends MongoDBContainerConfig {
 
     @Test
     void constructor() {
-        repository = new MongodbJobRepository(mongoTemplate, "A", "B");
+        repository = new MongodbJobRepository(mongoTemplate, "A", "B", new JobExecutionDocumentMapper());
         assertEquals("A", repository.getJobCollectionName());
         assertEquals("B", repository.getCounterCollectionName());
     }
 
     @Test
     void constructor_counters() {
-        repository = new MongodbJobRepository(mongoTemplate, jobCollectionName, counterCollectionName);
+        repository = new MongodbJobRepository(mongoTemplate, jobCollectionName, counterCollectionName, new JobExecutionDocumentMapper());
 
         assertEquals(JOB_INSTANCE_ID, repository.getJobInstanceCounter().getCounterName());
         assertEquals(counterCollectionName, repository.getJobInstanceCounter().getCounterCollection());

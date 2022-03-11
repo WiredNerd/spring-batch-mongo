@@ -17,7 +17,7 @@ dependencies {
     implementation 'org.springframework.batch:spring-batch-core:latest.release'
     implementation 'org.springframework.data:spring-data-mongodb:[3.2,3.3)'
     // version 3.2 for compatibility with boot 2.5
-    implementation 'javax.xml.bind:jaxb-api:[2,3)'
+    api 'javax.xml.bind:jaxb-api:[2,3)'
 
     testImplementation "org.springframework.boot:spring-boot-starter-test:${springbootVersion}"
     testImplementation 'org.junit.jupiter:junit-jupiter:latest.release'
