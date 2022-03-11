@@ -103,6 +103,7 @@ If a specific `ExecutionContextSerializer` or `JobKeyGenerator` is needed, it ca
 |-------|-----------------------------------------------------|--------|
 | 1.1.0 | com.fasterxml.jackson.databind.ObjectMapper         | JSON   |
 | 1.1.0 | org.springframework.data.mongodb.core.MongoTemplate | org.bson.Document | 
+| 1.1.1 | javax.xml.bind.JAXBContext                          | XML |
 
 # Document Models
 
