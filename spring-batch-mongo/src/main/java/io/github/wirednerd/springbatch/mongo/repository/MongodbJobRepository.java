@@ -6,7 +6,6 @@ import io.github.wirednerd.springbatch.document.JobExecutionDocumentMapper;
 import io.github.wirednerd.springbatch.document.StepExecutionDocument;
 import lombok.Data;
 import lombok.Getter;
-import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import org.bson.Document;
 import org.springframework.batch.core.*;
@@ -160,36 +159,27 @@ public class MongodbJobRepository implements JobRepository {
     /**
      * Used for converting Batch Job Execution Objects to Document objects
      *
-     * @param jobExecutionDocumentMapper {@link JobExecutionDocumentMapper}
      * @return {@link JobExecutionDocumentMapper}
      */
     @Getter
-    @Setter
-    private JobExecutionDocumentMapper jobExecutionDocumentMapper = new JobExecutionDocumentMapper();
-
-    /**
-     * Used for the generation of the key used in identifying unique JobInstance.
-     *
-     * @param jobKeyGenerator {@link JobKeyGenerator}&lt;{@link JobParameters}&gt;
-     * @return {@link JobKeyGenerator}&lt;{@link JobParameters}&gt;
-     */
-    @Getter
-    @Setter
-    private JobKeyGenerator<JobParameters> jobKeyGenerator = new DefaultJobKeyGenerator();
+    private final JobExecutionDocumentMapper jobExecutionDocumentMapper;
 
     /**
      * <p>Initializes Counter objects for jobInstanceId, jobExecutionId, and stepExecutionId</p>
      * <p>Ensures Unique Index on jobName, jobKey, and jobExecutionId named "jobInstance_jobExecution_unique"</p>
      * <p>Ensures Unique Index on jobExecutionId named "jobExecutionId_unique"</p>
      *
-     * @param mongoTemplate         {@link MongoTemplate} to use.
-     * @param jobCollectionName     to be used for storing job execution data.
-     * @param counterCollectionName to be used for storing sequence objects.
+     * @param mongoTemplate              {@link MongoTemplate} to use.
+     * @param jobCollectionName          to be used for storing job execution data.
+     * @param counterCollectionName      to be used for storing sequence objects.
+     * @param jobExecutionDocumentMapper used for converting Job Execution data
      */
-    public MongodbJobRepository(MongoTemplate mongoTemplate, String jobCollectionName, String counterCollectionName) {
+    public MongodbJobRepository(MongoTemplate mongoTemplate, String jobCollectionName, String counterCollectionName,
+                                JobExecutionDocumentMapper jobExecutionDocumentMapper) {
         this.mongoTemplate = mongoTemplate;
         this.jobCollectionName = jobCollectionName;
         this.counterCollectionName = counterCollectionName;
+        this.jobExecutionDocumentMapper = jobExecutionDocumentMapper;
 
         jobInstanceCounter = new MongodbCounter(mongoTemplate, JOB_INSTANCE_ID, counterCollectionName);
         jobExecutionCounter = new MongodbCounter(mongoTemplate, JOB_EXECUTION_ID, counterCollectionName);
@@ -210,7 +200,7 @@ public class MongodbJobRepository implements JobRepository {
         validateJobInstance(jobName, jobParameters);
         return mongoTemplate.exists(new Query()
                         .addCriteria(Criteria.where(JOB_NAME).is(jobName))
-                        .addCriteria(Criteria.where(JOB_KEY).is(jobKeyGenerator.generateKey(jobParameters)))
+                        .addCriteria(Criteria.where(JOB_KEY).is(jobExecutionDocumentMapper.getJobKeyGenerator().generateKey(jobParameters)))
                         .limit(1),
                 jobCollectionName);
     }
@@ -302,7 +292,7 @@ public class MongodbJobRepository implements JobRepository {
          * has finished.
          */
 
-        var jobKey = jobKeyGenerator.generateKey(jobParameters);
+        var jobKey = jobExecutionDocumentMapper.getJobKeyGenerator().generateKey(jobParameters);
 
         var jobExecutionDocs = mongoTemplate.find(new Query()
                         .addCriteria(Criteria.where(JOB_NAME).is(jobName))
@@ -345,11 +335,11 @@ public class MongodbJobRepository implements JobRepository {
         jobExecution.setId(jobExecutionCounter.nextValue());
         jobExecution.incrementVersion();
 
-        var document = (org.bson.Document) mongoTemplate.getConverter().convertToMongoType(jobExecutionDocumentMapper.toJobExecutionDocument(jobExecution));
+        var document = (Document) mongoTemplate.getConverter().convertToMongoType(jobExecutionDocumentMapper.toJobExecutionDocument(jobExecution));
 
         mongoTemplate.upsert(new Query()
                         .addCriteria(Criteria.where(JOB_NAME).is(jobExecution.getJobInstance().getJobName()))
-                        .addCriteria(Criteria.where(JOB_KEY).is(jobKeyGenerator.generateKey(jobExecution.getJobParameters())))
+                        .addCriteria(Criteria.where(JOB_KEY).is(jobExecutionDocumentMapper.getJobKeyGenerator().generateKey(jobExecution.getJobParameters())))
                         .addCriteria(Criteria.where(JOB_EXECUTION_ID).is(null)),
                 Update.fromDocument(document), jobCollectionName);
 
@@ -415,7 +405,7 @@ public class MongodbJobRepository implements JobRepository {
     private void synchronizeStatusAndVersion(JobExecution jobExecution) {
         var jobExecutionSavedDoc = mongoTemplate.findOne(new Query()
                         .addCriteria(Criteria.where(JOB_NAME).is(jobExecution.getJobInstance().getJobName()))
-                        .addCriteria(Criteria.where(JOB_KEY).is(jobKeyGenerator.generateKey(jobExecution.getJobParameters())))
+                        .addCriteria(Criteria.where(JOB_KEY).is(jobExecutionDocumentMapper.getJobKeyGenerator().generateKey(jobExecution.getJobParameters())))
                         .addCriteria(Criteria.where(JOB_EXECUTION_ID).is(jobExecution.getId()))
                 , JobExecutionDocument.class, jobCollectionName);
 
@@ -498,7 +488,7 @@ public class MongodbJobRepository implements JobRepository {
     public JobExecution getLastJobExecution(String jobName, JobParameters jobParameters) {
         validateJobInstance(jobName, jobParameters);
 
-        var jobKey = jobKeyGenerator.generateKey(jobParameters);
+        var jobKey = jobExecutionDocumentMapper.getJobKeyGenerator().generateKey(jobParameters);
         var jobExecutionDoc = mongoTemplate.findOne(new Query()
                         .addCriteria(Criteria.where(JOB_NAME).is(jobName))
                         .addCriteria(Criteria.where(JOB_KEY).is(jobKey))
@@ -644,8 +634,11 @@ public class MongodbJobRepository implements JobRepository {
         Assert.notNull(stepExecution.getJobExecutionId(), "StepExecution must belong to persisted JobExecution.");
     }
 
+    /**
+     * Temporary storage of query results
+     */
     @Data
-    static class StepExecutionSearchResult {
+    private static class StepExecutionSearchResult {
 
         @Field(STEP_EXECUTIONS)
         private StepExecutionDocument stepExecutions;

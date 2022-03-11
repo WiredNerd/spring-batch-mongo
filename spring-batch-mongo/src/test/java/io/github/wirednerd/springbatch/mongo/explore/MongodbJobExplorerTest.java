@@ -4,10 +4,7 @@ import io.github.wirednerd.springbatch.document.JobExecutionDocumentMapper;
 import io.github.wirednerd.springbatch.mongo.MongoDBContainerConfig;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.springframework.batch.core.JobExecution;
-import org.springframework.batch.core.JobInstance;
-import org.springframework.batch.core.JobParameter;
-import org.springframework.batch.core.JobParameters;
+import org.springframework.batch.core.*;
 import org.springframework.batch.core.launch.NoSuchJobException;
 import org.springframework.data.mongodb.core.query.Query;
 
@@ -31,8 +28,8 @@ class MongodbJobExplorerTest extends MongoDBContainerConfig {
     private final JobExecutionDocumentMapper jobExecutionDocumentMapper = new JobExecutionDocumentMapper();
 
     @BeforeEach
-    void setUp() throws Exception {
-        explorer = new MongodbJobExplorer(mongoTemplate, jobCollectionName);
+    void setUp() {
+        explorer = new MongodbJobExplorer(mongoTemplate, jobCollectionName, new JobExecutionDocumentMapper());
         Set<String> jobNames = new HashSet<>();
 
         jobExecution11 = new JobExecution(new JobInstance(10L, "Job1"), 11L, new JobParameters(), "");
@@ -280,7 +277,7 @@ class MongodbJobExplorerTest extends MongoDBContainerConfig {
         var result = explorer.findRunningJobExecutions("Job1");
 
         assertEquals(2, result.size());
-        var idSet = result.stream().map(exe -> exe.getId()).collect(Collectors.toSet());
+        var idSet = result.stream().map(Entity::getId).collect(Collectors.toSet());
         assertTrue(idSet.contains(12L), idSet.toString());
         assertTrue(idSet.contains(13L), idSet.toString());
     }

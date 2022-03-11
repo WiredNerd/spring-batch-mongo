@@ -1,5 +1,6 @@
 package io.github.wirednerd.springbatch.document;
 
+import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import org.springframework.batch.core.*;
@@ -26,6 +27,7 @@ import java.util.stream.Collectors;
  *
  * @author Peter Busch
  */
+@Getter
 @Setter
 @NoArgsConstructor
 @SuppressWarnings("SameNameButDifferent")
@@ -100,7 +102,7 @@ public class JobExecutionDocumentMapper {
         document.setJobKey(jobKeyGenerator.generateKey(source.getJobParameters()));
 
         var stepDocuments = source.getStepExecutions().stream()
-                .map(step -> toStepExecutionDocument(step)).collect(Collectors.toList());
+                .map(this::toStepExecutionDocument).collect(Collectors.toList());
         document.setStepExecutions(stepDocuments);
 
         document.setStatus(source.getStatus().toString());

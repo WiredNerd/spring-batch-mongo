@@ -1,17 +1,31 @@
 package io.github.wirednerd.springbatch.mongo.configuration;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import io.github.wirednerd.springbatch.mongo.MongoDBContainerConfig;
 import io.github.wirednerd.springbatch.mongo.explore.MongodbJobExplorer;
 import io.github.wirednerd.springbatch.mongo.repository.MongodbJobRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
+import org.mockito.Mockito;
+import org.springframework.batch.core.DefaultJobKeyGenerator;
+import org.springframework.batch.core.JobKeyGenerator;
+import org.springframework.batch.core.JobParameters;
 import org.springframework.batch.core.launch.support.SimpleJobLauncher;
+import org.springframework.batch.core.repository.ExecutionContextSerializer;
+import org.springframework.batch.core.repository.dao.DefaultExecutionContextSerializer;
+import org.springframework.batch.core.repository.dao.Jackson2ExecutionContextStringSerializer;
 import org.springframework.core.task.SyncTaskExecutor;
 import org.springframework.data.mongodb.MongoTransactionManager;
 import org.springframework.test.util.ReflectionTestUtils;
 
+import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
+
 import static io.github.wirednerd.springbatch.document.JobExecutionDocumentMapper.*;
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 
 class MongodbBatchConfigurerTest extends MongoDBContainerConfig {
 
@@ -20,19 +34,35 @@ class MongodbBatchConfigurerTest extends MongoDBContainerConfig {
     private MongodbBatchConfigurer mongodbBatchConfigurer;
 
     private SyncTaskExecutor taskExecutor;
+    private JobKeyGenerator<JobParameters> jobKeyGenerator;
+    private Jackson2ExecutionContextStringSerializer executionContextSerializer;
+    private Charset executionContextCharset;
+    private ObjectMapper objectMapper;
+
+    ArgumentCaptor<ObjectMapper> objectMapperCaptor = ArgumentCaptor.forClass(ObjectMapper.class);
 
     @BeforeEach
     void setupMongoTransactionManager() {
         mongoTransactionManager = new MongoTransactionManager(mongoDatabaseFactory);
 
         taskExecutor = new SyncTaskExecutor();
+        jobKeyGenerator = new DefaultJobKeyGenerator();
+        executionContextSerializer = Mockito.spy(new Jackson2ExecutionContextStringSerializer());
+        executionContextCharset = StandardCharsets.ISO_8859_1;
+        objectMapper = new ObjectMapper();
+    }
 
+    private void buildWithAllOptions() {
         mongodbBatchConfigurer = MongodbBatchConfigurer.builder()
                 .mongoTemplate(mongoTemplate)
                 .mongoTransactionManager(mongoTransactionManager)
                 .jobCollectionName("jobs")
                 .counterCollectionName("numbers")
                 .taskExecutor(taskExecutor)
+                .jobKeyGenerator(jobKeyGenerator)
+                .executionContextSerializer(executionContextSerializer)
+                .executionContextCharset(executionContextCharset)
+                .objectMapper(objectMapper)
                 .build();
     }
 
@@ -90,6 +120,8 @@ class MongodbBatchConfigurerTest extends MongoDBContainerConfig {
 
     @Test
     void constructor_ensureIndexes() {
+        buildWithAllOptions();
+
         var jobIndexes = mongoTemplate.indexOps("jobs").getIndexInfo();
         assertEquals(5, jobIndexes.size());
         assertEquals("_id_", jobIndexes.get(0).getName());
@@ -97,6 +129,8 @@ class MongodbBatchConfigurerTest extends MongoDBContainerConfig {
 
     @Test
     void constructor_ensureIndexes_jobInstance_jobExecution_unique() {
+        buildWithAllOptions();
+
         var jobIndexes = mongoTemplate.indexOps("jobs").getIndexInfo();
 
         var jobIndex = jobIndexes.get(1);
@@ -111,6 +145,8 @@ class MongodbBatchConfigurerTest extends MongoDBContainerConfig {
 
     @Test
     void constructor_ensureIndexes_jobExecutionId_unique() {
+        buildWithAllOptions();
+
         var jobIndexes = mongoTemplate.indexOps("jobs").getIndexInfo();
 
         var jobIndex = jobIndexes.get(2);
@@ -123,6 +159,8 @@ class MongodbBatchConfigurerTest extends MongoDBContainerConfig {
 
     @Test
     void constructor_ensureIndexes_jobInstanceId() {
+        buildWithAllOptions();
+
         var jobIndexes = mongoTemplate.indexOps("jobs").getIndexInfo();
 
         var jobIndex = jobIndexes.get(3);
@@ -135,6 +173,8 @@ class MongodbBatchConfigurerTest extends MongoDBContainerConfig {
 
     @Test
     void constructor_ensureIndexes_jobName_jobInstanceId() {
+        buildWithAllOptions();
+
         var jobIndexes = mongoTemplate.indexOps("jobs").getIndexInfo();
 
         var jobIndex = jobIndexes.get(4);
@@ -148,31 +188,83 @@ class MongodbBatchConfigurerTest extends MongoDBContainerConfig {
 
     @Test
     void getJobRepository() {
+        buildWithAllOptions();
+
         assertTrue(mongodbBatchConfigurer.getJobRepository() instanceof MongodbJobRepository);
         MongodbJobRepository repository = ((MongodbJobRepository) mongodbBatchConfigurer.getJobRepository());
-        assertTrue(mongoTemplate == repository.getMongoTemplate());
+        assertSame(mongoTemplate, repository.getMongoTemplate());
         assertEquals("jobs", repository.getJobCollectionName());
         assertEquals("numbers", repository.getCounterCollectionName());
     }
 
     @Test
     void getTransactionManager() {
-        assertTrue(mongoTransactionManager == mongodbBatchConfigurer.getTransactionManager());
+        buildWithAllOptions();
+
+        assertSame(mongoTransactionManager, mongodbBatchConfigurer.getTransactionManager());
     }
 
     @Test
     void getJobLauncher() {
+        buildWithAllOptions();
+
         assertTrue(mongodbBatchConfigurer.getJobLauncher() instanceof SimpleJobLauncher);
-        assertTrue(taskExecutor == ReflectionTestUtils.getField(mongodbBatchConfigurer.getJobLauncher(), "taskExecutor"));
-        assertTrue(mongodbBatchConfigurer.getJobRepository() == ReflectionTestUtils.getField(mongodbBatchConfigurer.getJobLauncher(), "jobRepository"));
+        assertSame(taskExecutor, ReflectionTestUtils.getField(mongodbBatchConfigurer.getJobLauncher(), "taskExecutor"));
+        assertSame(mongodbBatchConfigurer.getJobRepository(), ReflectionTestUtils.getField(mongodbBatchConfigurer.getJobLauncher(), "jobRepository"));
     }
 
     @Test
     void getJobExplorer() {
+        buildWithAllOptions();
+
         assertTrue(mongodbBatchConfigurer.getJobExplorer() instanceof MongodbJobExplorer);
         MongodbJobExplorer explorer = ((MongodbJobExplorer) mongodbBatchConfigurer.getJobExplorer());
-        assertTrue(mongoTemplate == explorer.getMongoTemplate());
+        assertSame(mongoTemplate, explorer.getMongoTemplate());
         assertEquals("jobs", explorer.getJobCollectionName());
+    }
+
+    @Test
+    void jobKeyGenerator() {
+        buildWithAllOptions();
+
+        assertSame(jobKeyGenerator, ((MongodbJobRepository) mongodbBatchConfigurer.getJobRepository()).getJobExecutionDocumentMapper().getJobKeyGenerator());
+        assertSame(jobKeyGenerator, ((MongodbJobExplorer) mongodbBatchConfigurer.getJobExplorer()).getJobExecutionDocumentMapper().getJobKeyGenerator());
+    }
+
+    @Test
+    void executionContextSerializer() {
+        buildWithAllOptions();
+
+        assertSame(executionContextSerializer, ((MongodbJobRepository) mongodbBatchConfigurer.getJobRepository()).getJobExecutionDocumentMapper().getExecutionContextSerializer());
+        assertSame(executionContextSerializer, ((MongodbJobExplorer) mongodbBatchConfigurer.getJobExplorer()).getJobExecutionDocumentMapper().getExecutionContextSerializer());
+    }
+
+    @Test
+    void objectMapper() {
+        buildWithAllOptions();
+
+        verify(executionContextSerializer).setObjectMapper(objectMapperCaptor.capture());
+        assertSame(objectMapper, objectMapperCaptor.getValue());
+    }
+
+    @Test
+    void objectMapper_notJackson2ExecutionContextStringSerializer() {
+        mongodbBatchConfigurer = MongodbBatchConfigurer.builder()
+                .mongoTemplate(mongoTemplate)
+                .mongoTransactionManager(mongoTransactionManager)
+                .executionContextSerializer(new DefaultExecutionContextSerializer())
+                .objectMapper(objectMapper)
+                .build();
+
+        verify(executionContextSerializer, times(0)).setObjectMapper(Mockito.any());
+    }
+
+    @Test
+    void executionContextCharset() {
+        buildWithAllOptions();
+
+        assertSame(executionContextCharset, ((MongodbJobRepository) mongodbBatchConfigurer.getJobRepository()).getJobExecutionDocumentMapper().getExecutionContextCharset());
+        assertSame(executionContextCharset, ((MongodbJobExplorer) mongodbBatchConfigurer.getJobExplorer()).getJobExecutionDocumentMapper().getExecutionContextCharset());
     }
 
     @Test
@@ -184,11 +276,24 @@ class MongodbBatchConfigurerTest extends MongoDBContainerConfig {
 
         assertTrue(mongodbBatchConfigurer.getJobRepository() instanceof MongodbJobRepository);
         MongodbJobRepository repository = ((MongodbJobRepository) mongodbBatchConfigurer.getJobRepository());
-        assertTrue(mongoTemplate == repository.getMongoTemplate());
+        assertSame(mongoTemplate, repository.getMongoTemplate());
         assertEquals("jobExecutions", repository.getJobCollectionName());
         assertEquals("counters", repository.getCounterCollectionName());
 
         assertTrue(mongodbBatchConfigurer.getJobLauncher() instanceof SimpleJobLauncher);
         assertTrue(ReflectionTestUtils.getField(mongodbBatchConfigurer.getJobLauncher(), "taskExecutor") instanceof SyncTaskExecutor);
+
+        assertInstanceOf(DefaultJobKeyGenerator.class, ((MongodbJobRepository) mongodbBatchConfigurer.getJobRepository()).getJobExecutionDocumentMapper().getJobKeyGenerator());
+        assertInstanceOf(DefaultJobKeyGenerator.class, ((MongodbJobRepository) mongodbBatchConfigurer.getJobRepository()).getJobExecutionDocumentMapper().getJobKeyGenerator());
+
+        assertInstanceOf(Jackson2ExecutionContextStringSerializer.class, ((MongodbJobRepository) mongodbBatchConfigurer.getJobRepository())
+                .getJobExecutionDocumentMapper().getExecutionContextSerializer());
+        assertInstanceOf(Jackson2ExecutionContextStringSerializer.class, ((MongodbJobRepository) mongodbBatchConfigurer.getJobRepository())
+                .getJobExecutionDocumentMapper().getExecutionContextSerializer());
+
+        verify(executionContextSerializer, times(0)).setObjectMapper(Mockito.any());
+
+        assertSame(StandardCharsets.UTF_8, ((MongodbJobRepository) mongodbBatchConfigurer.getJobRepository()).getJobExecutionDocumentMapper().getExecutionContextCharset());
+        assertSame(StandardCharsets.UTF_8, ((MongodbJobExplorer) mongodbBatchConfigurer.getJobExplorer()).getJobExecutionDocumentMapper().getExecutionContextCharset());
     }
 }

@@ -87,12 +87,7 @@ public class CreateUuidList {
 
     @Bean
     public ItemProcessor<String, String> processString() {
-        return new ItemProcessor<>() {
-            @Override
-            public String process(String item) throws Exception {
-                return "Processed String: " + item;
-            }
-        };
+        return item -> "Processed String: " + item;
     }
 
     @Bean
