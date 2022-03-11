@@ -18,11 +18,11 @@ dependencies {
     implementation 'org.springframework.batch:spring-batch-core:latest.release'
     implementation 'org.springframework.data:spring-data-mongodb:[3.2,3.3)'
     // version 3.2 for compatibility with boot 2.5
-    
+
     // Fix warning: unknown enum constant javax.annotation.meta.When.MAYBE
     implementation 'org.netbeans.api:org-netbeans-api-annotations-common:latest.release'
 
-    testImplementation 'org.junit.jupiter:junit-jupiter'
+    testImplementation 'org.junit.jupiter:junit-jupiter:latest.release'
     testImplementation "org.springframework.boot:spring-boot-starter-test:${springbootVersion}"
     testImplementation 'org.mongodb:mongodb-driver-sync:latest.release'
 }
