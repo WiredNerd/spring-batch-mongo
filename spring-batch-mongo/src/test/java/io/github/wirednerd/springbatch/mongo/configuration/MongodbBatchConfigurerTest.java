@@ -197,6 +197,17 @@ class MongodbBatchConfigurerTest extends MongoDBContainerConfig {
     }
 
     @Test
+    void getMongodbJobRepository() {
+        buildWithAllOptions();
+
+        assertTrue(mongodbBatchConfigurer.getMongodbJobRepository() instanceof MongodbJobRepository);
+        MongodbJobRepository repository = mongodbBatchConfigurer.getMongodbJobRepository();
+        assertSame(mongoTemplate, repository.getMongoTemplate());
+        assertEquals("jobs", repository.getJobCollectionName());
+        assertEquals("numbers", repository.getCounterCollectionName());
+    }
+
+    @Test
     void getTransactionManager() {
         buildWithAllOptions();
 
@@ -218,6 +229,16 @@ class MongodbBatchConfigurerTest extends MongoDBContainerConfig {
 
         assertTrue(mongodbBatchConfigurer.getJobExplorer() instanceof MongodbJobExplorer);
         MongodbJobExplorer explorer = ((MongodbJobExplorer) mongodbBatchConfigurer.getJobExplorer());
+        assertSame(mongoTemplate, explorer.getMongoTemplate());
+        assertEquals("jobs", explorer.getJobCollectionName());
+    }
+
+    @Test
+    void getMongodbJobExplorer() {
+        buildWithAllOptions();
+
+        assertTrue(mongodbBatchConfigurer.getMongodbJobExplorer() instanceof MongodbJobExplorer);
+        MongodbJobExplorer explorer = mongodbBatchConfigurer.getMongodbJobExplorer();
         assertSame(mongoTemplate, explorer.getMongoTemplate());
         assertEquals("jobs", explorer.getJobCollectionName());
     }
