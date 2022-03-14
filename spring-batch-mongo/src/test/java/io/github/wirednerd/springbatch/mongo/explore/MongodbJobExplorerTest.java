@@ -20,30 +20,33 @@ class MongodbJobExplorerTest extends MongoDBContainerConfig {
     private final String jobCollectionName = "testJobs";
     private final String counterCollectionName = "testCounters";
 
-    private JobExecution jobExecution11, jobExecution12, jobExecution13;
-    private JobExecution jobExecution21, jobExecution22;
-
     private List<String> jobNamesSorted;
 
     private final JobExecutionDocumentMapper jobExecutionDocumentMapper = new JobExecutionDocumentMapper();
 
     @BeforeEach
     void setUp() {
+        JobExecution jobExecution11, jobExecution12, jobExecution13;
+        JobExecution jobExecution21, jobExecution22;
+
         explorer = new MongodbJobExplorer(mongoTemplate, jobCollectionName, new JobExecutionDocumentMapper());
         Set<String> jobNames = new HashSet<>();
 
         jobExecution11 = new JobExecution(new JobInstance(10L, "Job1"), 11L, new JobParameters(), "");
         jobExecution11.setStartTime(new Date(System.currentTimeMillis()));
         jobExecution11.setEndTime(new Date(System.currentTimeMillis()));
+        jobExecution11.setStatus(BatchStatus.COMPLETED);
 
         jobExecution12 = new JobExecution(new JobInstance(10L, "Job1"), 12L, new JobParameters(), "");
         jobExecution12.setStartTime(new Date(System.currentTimeMillis()));
+        jobExecution12.setStatus(BatchStatus.COMPLETED);
 
         var paramMap = new LinkedHashMap<String, JobParameter>();
         paramMap.put("Key", new JobParameter("Value"));
 
         jobExecution13 = new JobExecution(new JobInstance(11L, "Job1"), 13L, new JobParameters(paramMap), "");
         jobExecution13.setStartTime(new Date(System.currentTimeMillis()));
+        jobExecution13.setStatus(BatchStatus.STARTED);
         jobExecution13.createStepExecution("Step1").setId(1L);
         jobExecution13.createStepExecution("Step2").setId(2L);
         jobExecution13.createStepExecution("Step3").setId(3L);
@@ -54,7 +57,9 @@ class MongodbJobExplorerTest extends MongoDBContainerConfig {
         jobNames.add("Job1");
 
         jobExecution21 = new JobExecution(new JobInstance(20L, "Job2"), 21L, new JobParameters(), "");
+        jobExecution21.setStatus(BatchStatus.FAILED);
         jobExecution22 = new JobExecution(new JobInstance(20L, "Job2"), 22L, new JobParameters(), "");
+        jobExecution21.setStatus(BatchStatus.STARTED);
 
         mongoTemplate.insert(jobExecutionDocumentMapper.toJobExecutionDocument(jobExecution21), jobCollectionName);
         mongoTemplate.insert(jobExecutionDocumentMapper.toJobExecutionDocument(jobExecution22), jobCollectionName);
@@ -270,6 +275,22 @@ class MongodbJobExplorerTest extends MongoDBContainerConfig {
         } catch (IllegalArgumentException e) {
             assertEquals("JobInstance must not be null.", e.getMessage());
         }
+    }
+
+    @Test
+    void getLastCompletedJobExecution() {
+        var result = explorer.getLastCompletedJobExecution("Job1");
+        assertEquals(12L, result.getId());
+    }
+
+    @Test
+    void getLastCompletedJobExecution_noCompletedJobs() {
+        assertNull(explorer.getLastCompletedJobExecution("Job2"));
+    }
+
+    @Test
+    void getLastCompletedJobExecution_jobNotFound() {
+        assertNull(explorer.getLastCompletedJobExecution("Job3"));
     }
 
     @Test
