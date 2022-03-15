@@ -5,6 +5,7 @@ import io.github.wirednerd.springbatch.document.JobExecutionDocumentMapper;
 import io.github.wirednerd.springbatch.document.JobInstanceDocument;
 import lombok.Getter;
 import org.bson.Document;
+import org.springframework.batch.core.BatchStatus;
 import org.springframework.batch.core.JobExecution;
 import org.springframework.batch.core.JobInstance;
 import org.springframework.batch.core.StepExecution;
@@ -190,7 +191,6 @@ public class MongodbJobExplorer implements JobExplorer {
      *
      * @param jobName name of the job
      * @return the last job instance by id if any or null otherwise
-     * @since 4.2
      */
     @Override
     public JobInstance getLastJobInstance(String jobName) {
@@ -256,6 +256,27 @@ public class MongodbJobExplorer implements JobExplorer {
                 JobExecutionDocument.class, jobCollectionName);
 
         return document == null ? null : jobExecutionDocumentMapper.toJobExecution(document);
+    }
+
+    /**
+     * Find the last {@link JobExecution} for specified jobName that completed successfully
+     *
+     * @param jobName name of the job
+     * @return the last {@link JobExecution} with the specified jobName and "Completed" status.
+     * @since 1.1.3
+     */
+    public JobExecution getLastCompletedJobExecution(String jobName) {
+        var executionDoc = mongoTemplate.findOne(Query
+                        .query(Criteria.where(JOB_NAME).is(jobName)
+                                .and(STATUS).is(BatchStatus.COMPLETED))
+                        .with(Sort.by(JOB_EXECUTION_ID).descending()),
+                JobExecutionDocument.class, jobCollectionName);
+
+        if (executionDoc != null) {
+            return this.getJobExecutionDocumentMapper().toJobExecution(executionDoc);
+        }
+
+        return null;
     }
 
     /**

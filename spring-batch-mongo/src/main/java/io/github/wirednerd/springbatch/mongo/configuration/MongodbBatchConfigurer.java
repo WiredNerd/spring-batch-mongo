@@ -142,6 +142,7 @@ public class MongodbBatchConfigurer implements BatchConfigurer {
                         .on(JOB_NAME, Sort.Direction.ASC)
                         .on(JOB_INSTANCE_ID, Sort.Direction.DESC)
                         .named("jobName_jobInstanceId"));
+
     }
 
     private JobExecutionDocumentMapper buildJobExecutionDocumentMapper(@Nullable JobKeyGenerator<JobParameters> jobKeyGenerator,
@@ -184,6 +185,24 @@ public class MongodbBatchConfigurer implements BatchConfigurer {
     @Override
     public JobExplorer getJobExplorer() {
         return jobExplorer;
+    }
+
+    /**
+     * Convenience method for retrieving {@link MongodbJobRepository}
+     *
+     * @return {@link MongodbJobRepository}
+     */
+    public MongodbJobRepository getMongodbJobRepository() {
+        return (MongodbJobRepository) jobRepository;
+    }
+
+    /**
+     * Convenience method for retrieving {@link MongodbJobExplorer}
+     *
+     * @return {@link MongodbJobExplorer}
+     */
+    public MongodbJobExplorer getMongodbJobExplorer() {
+        return (MongodbJobExplorer) jobExplorer;
     }
 
     /**
