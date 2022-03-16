@@ -5,10 +5,7 @@ import io.github.wirednerd.springbatch.document.JobExecutionDocumentMapper;
 import io.github.wirednerd.springbatch.document.JobInstanceDocument;
 import lombok.Getter;
 import org.bson.Document;
-import org.springframework.batch.core.BatchStatus;
-import org.springframework.batch.core.JobExecution;
-import org.springframework.batch.core.JobInstance;
-import org.springframework.batch.core.StepExecution;
+import org.springframework.batch.core.*;
 import org.springframework.batch.core.explore.JobExplorer;
 import org.springframework.batch.core.launch.NoSuchJobException;
 import org.springframework.data.domain.Sort;
@@ -268,7 +265,8 @@ public class MongodbJobExplorer implements JobExplorer {
     public JobExecution getLastCompletedJobExecution(String jobName) {
         var executionDoc = mongoTemplate.findOne(Query
                         .query(Criteria.where(JOB_NAME).is(jobName)
-                                .and(STATUS).is(BatchStatus.COMPLETED))
+                                .and(STATUS).is(BatchStatus.COMPLETED)
+                                .and(EXIT_CODE).is("COMPLETED"))
                         .with(Sort.by(JOB_EXECUTION_ID).descending()),
                 JobExecutionDocument.class, jobCollectionName);
 

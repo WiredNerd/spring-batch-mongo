@@ -36,10 +36,12 @@ class MongodbJobExplorerTest extends MongoDBContainerConfig {
         jobExecution11.setStartTime(new Date(System.currentTimeMillis()));
         jobExecution11.setEndTime(new Date(System.currentTimeMillis()));
         jobExecution11.setStatus(BatchStatus.COMPLETED);
+        jobExecution11.setExitStatus(ExitStatus.COMPLETED);
 
         jobExecution12 = new JobExecution(new JobInstance(10L, "Job1"), 12L, new JobParameters(), "");
         jobExecution12.setStartTime(new Date(System.currentTimeMillis()));
         jobExecution12.setStatus(BatchStatus.COMPLETED);
+        jobExecution12.setExitStatus(ExitStatus.COMPLETED);
 
         var paramMap = new LinkedHashMap<String, JobParameter>();
         paramMap.put("Key", new JobParameter("Value"));
@@ -57,9 +59,11 @@ class MongodbJobExplorerTest extends MongoDBContainerConfig {
         jobNames.add("Job1");
 
         jobExecution21 = new JobExecution(new JobInstance(20L, "Job2"), 21L, new JobParameters(), "");
-        jobExecution21.setStatus(BatchStatus.FAILED);
+        jobExecution21.setStatus(BatchStatus.COMPLETED);
+        jobExecution21.setExitStatus(ExitStatus.FAILED);
         jobExecution22 = new JobExecution(new JobInstance(20L, "Job2"), 22L, new JobParameters(), "");
-        jobExecution21.setStatus(BatchStatus.STARTED);
+        jobExecution22.setStatus(BatchStatus.STARTED);
+        jobExecution22.setExitStatus(ExitStatus.COMPLETED);
 
         mongoTemplate.insert(jobExecutionDocumentMapper.toJobExecutionDocument(jobExecution21), jobCollectionName);
         mongoTemplate.insert(jobExecutionDocumentMapper.toJobExecutionDocument(jobExecution22), jobCollectionName);
